@@ -29,7 +29,7 @@ import org.openide.util.Lookup;
  * Implements other advanced influence ranking methods: Hirsch-Index (h-index)
  * Hirsch index: ClusterRank: "Identifying Influential Nodes in Large-Scale
  * Directed Networks: The Role of Clustering", Chen 2013 LeaderRank: "Leaders in
- * Social Networks, the Delicious Case", Lu 2011 Che
+ * Social Networks, the Delicious Case", Lu 2011 C
  *
  * @author Alexander
  */
