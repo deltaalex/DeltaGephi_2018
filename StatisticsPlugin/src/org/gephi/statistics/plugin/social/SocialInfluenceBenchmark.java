@@ -220,7 +220,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             List<Node> infectiousListA = new ArrayList<Node>();
             List<Node> infectiousListB = new ArrayList<Node>();
 
-            centralityTag = getCentralityTag(BenchmarkCentrality.LEADERRANK);  // dbg  
+            centralityTag = getCentralityTag(BenchmarkCentrality.BETWEENNESS);  // dbg  
             sortByCentrality(nodes, centralityTag);
             initNodes(nodes, infectiousListA, sirCol, deltaCol);
 
