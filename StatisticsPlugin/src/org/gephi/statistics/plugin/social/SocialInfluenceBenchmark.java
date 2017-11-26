@@ -24,6 +24,7 @@ import org.gephi.statistics.spi.Statistics;
 import org.gephi.utils.longtask.spi.LongTask;
 import org.gephi.utils.progress.Progress;
 import org.gephi.utils.progress.ProgressTicket;
+import org.junit.Ignore;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 
@@ -39,6 +40,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     public static final String TAG_SIR_STATUS = "SIR_status";
     public static final String TAG_DELTA_INFECT = "Delta_infect";
     public static final String TAG_KENDALL_SCORE = "Kendall_score";
+    public static final String TAG_OPINION = "Opinion";
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -58,11 +60,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE_COMPETE;
     /**
      * Stop condition for diffusion processes
      */
-    private final int MAX_ITERATIONS = 3000;
+    private final int MAX_ITERATIONS = 2000;
     /**
      * How often the population should be polled during the tolerance diffusion
      */
@@ -74,7 +76,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Ratio of initial seeders
      */
-    private double pSeeders = 0.05;
+    private double pSeeders = 0.01;
     /**
      * Ratio of population that needs to become recovered
      */
@@ -164,10 +166,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
         // atributes
         AttributeTable nodeTable = attributeModel.getNodeTable();
-        AttributeColumn sirCol = nodeTable.getColumn(TAG_SIR_STATUS);
+        AttributeColumn sirCol = nodeTable.getColumn(TAG_SIR_STATUS); // infected or stubborn agent(=1)
         AttributeColumn deltaCol = nodeTable.getColumn(TAG_DELTA_INFECT);
         AttributeColumn kendallCol = nodeTable.getColumn(TAG_KENDALL_SCORE);
-
+        AttributeColumn opinionCol = nodeTable.getColumn(TAG_OPINION); // opinion in tolerance model; <0.5->A, >=0.5->B
         if (sirCol == null) {
             sirCol = nodeTable.addColumn(TAG_SIR_STATUS, NbBundle.getMessage(SocialInfluenceBenchmark.class, "SocialInfluenceBenchmark.nodecolumn.SirStatus"), AttributeType.INT, AttributeOrigin.COMPUTED, new Integer(0));
         }
@@ -176,6 +178,9 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         }
         if (kendallCol == null) {
             kendallCol = nodeTable.addColumn(TAG_KENDALL_SCORE, NbBundle.getMessage(SocialInfluenceBenchmark.class, "SocialInfluenceBenchmark.nodecolumn.KendallScore"), AttributeType.INT, AttributeOrigin.COMPUTED, new Integer(0));
+        }
+        if (opinionCol == null) {
+            opinionCol = nodeTable.addColumn(TAG_OPINION, NbBundle.getMessage(SocialInfluenceBenchmark.class, "SocialInfluenceBenchmark.nodecolumn.Opinion"), AttributeType.FLOAT, AttributeOrigin.COMPUTED, new Float(0f));
         }
 
         // list of nodes
@@ -190,105 +195,40 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
         //
         // 1) compute centrality
-        //
-        // <editor-fold defaultstate="collapsed" desc="select centrality">
-        switch (centrality) {
-            case DEGREE:
-                centralityTag = Degree.DEGREE;
-                break;
-            case BETWEENNESS:
-                //runBetweenness(graph, attributeModel);
-                centralityTag = GraphDistance.BETWEENNESS;
-                break;
-            case EIGENVECTOR:
-                //runEigenvector(graph, attributeModel);
-                centralityTag = EigenvectorCentrality.EIGENVECTOR;
-                break;
-            case CLOSENESS:
-                //runBetweenness(graph, attributeModel);
-                centralityTag = GraphDistance.CLOSENESS;
-                break;
-            case PAGERANK:
-                //runPageRank(graph, attributeModel);
-                centralityTag = PageRank.PAGERANK;
-                break;
-            case HITS:
-                //runHits(graph, attributeModel);
-                centralityTag = Hits.AUTHORITY;
-                break;
-            case BDPOWER:
-                //runBetweenness(graph, attributeModel);
-                centralityTag = GraphDistance.B_TIMES_D_POWER;
-                break;
-            case BDINFLUENCE:
-                //runBetweenness(graph, attributeModel);
-                centralityTag = GraphDistance.B_PER_D_POWER;
-                break;
-            case HINDEX:
-                centralityTag = InfluenceRankings.HINDEX;
-                break;
-            case CLUSTERRANK:
-                centralityTag = InfluenceRankings.CLUSTERRANK;
-                break;
-            case LEADERRANK:
-                centralityTag = InfluenceRankings.LEADERRANK;
-                break;
-            case LOCALCENTRALITY:
-                centralityTag = InfluenceRankings.LOCALCENTRALITY;
-                break;
-        }
-        // </editor-fold>
+        //        
+        centralityTag = getCentralityTag(centrality);
 
         // check centrality was already run
         if (nodes.get(0).getAttributes().getValue(centralityTag) == null) {
             throw new IllegalStateException("You must first run " + centralityTag.toString() + " centrality on the graph.");
         }
 
-        progress.switchToDeterminate(100);
-        progress.finish();
-        graph.readUnlockAll();
-
         //
         // 2) sort nodes by centrality
         //      
 
-        Collections.sort(nodes, new Comparator<Node>() {
-            // sort by used centrality
-            public int compare(Node n1, Node n2) {
-                if (n1.getAttributes().getValue(centralityTag) instanceof Double) {
-                    Double c1 = (Double) n1.getAttributes().getValue(centralityTag);
-                    Double c2 = (Double) n2.getAttributes().getValue(centralityTag);
-                    return c2.compareTo(c1);
-                } else if (n1.getAttributes().getValue(centralityTag) instanceof Float) {
-                    Float c1 = (Float) n1.getAttributes().getValue(centralityTag);
-                    Float c2 = (Float) n2.getAttributes().getValue(centralityTag);
-                    return c2.compareTo(c1);
-                } else {
-                    Integer c1 = (Integer) n1.getAttributes().getValue(centralityTag);
-                    Integer c2 = (Integer) n2.getAttributes().getValue(centralityTag);
-                    return c2.compareTo(c1);
-
-                }
-            }
-        });
+        sortByCentrality(nodes, centralityTag);
 
         //
         // 3) infect top pSeeders% nodes
         //        
         List<Node> infectiousList = new ArrayList<Node>();
 
-        for (int i = 0; i < nodes.size(); ++i) {
-            Node node = nodes.get(i);
-            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+        if (!diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
+            initNodes(nodes, infectiousList, sirCol, deltaCol);
+        } else {
+            List<Node> infectiousListA = new ArrayList<Node>();
+            List<Node> infectiousListB = new ArrayList<Node>();
 
-            // set attributes
-            if (i <= pSeeders * nodes.size()) {
-                row.setValue(sirCol, SIRType.INFECTED);
-                row.setValue(deltaCol, 0);
-                infectiousList.add(node);
-            } else {
-                row.setValue(sirCol, SIRType.SUSCEPTIBLE);
-            }
+            centralityTag = getCentralityTag(BenchmarkCentrality.LEADERRANK);  // dbg  
+            sortByCentrality(nodes, centralityTag);
+            initNodes(nodes, infectiousListA, sirCol, deltaCol);
+
+            centralityTag = getCentralityTag(BenchmarkCentrality.DEGREE);  // dbg  
+            sortByCentrality(nodes, centralityTag);
+            initNodes(nodes, infectiousListB, sirCol, deltaCol);
+
+            infectiousList = mergeOpinions(infectiousListA, infectiousListB);
         }
 
         //
@@ -297,7 +237,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // or tolerance model
         //
 
-        // prepare log
+        // prepare log        
         try {
             File tmp = new File(System.getProperty("user.home") + "/Desktop/sir.txt");
             PrintWriter pw = new PrintWriter(tmp);
@@ -311,6 +251,9 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     break;
                 case TOLERANCE:
                     runTolerance(graph, nodes, infectiousList, sirCol, deltaCol);
+                    break;
+                case TOLERANCE_COMPETE:
+                    runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
                     break;
             }
 
@@ -327,10 +270,20 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
              pw.println(rec);
              }
              pw.close();*/
-            tmp.deleteOnExit(); // no-log on desktop
+
+//            for(Node inf : infectiousList) {
+//                pw.println(inf.getId());
+//            }
+//            pw.close();
+
+            //tmp.deleteOnExit(); // no-log on desktop
         } catch (FileNotFoundException ex) {
             Exceptions.printStackTrace(ex);
         }
+
+        progress.switchToDeterminate(100);
+        progress.finish();
+        graph.readUnlockAll();
     }
 
     private void runSIR(HierarchicalGraph graph, List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol) {
@@ -434,13 +387,13 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // init: attach extra node data to all nodes
         for (Node node : nodes) {
             // default nodes have opinion=0, half tolerance and are non-stubborn
-            ExtraNodeData data = new ExtraNodeData(0f, 0.5f, getRandomSleep(rand, minSleep, maxSleep), false);
+            ExtraNodeData data = new ExtraNodeData(0f, 1f, getRandomSleep(rand, minSleep, maxSleep), false);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 0);
         }
         for (Node node : stubbornAgents) {
-            // spreader nodes have opinion=1 (opposite), irrelevant tolerance and are stubborn
+            // spreader nodes always have opinion = 0 or 1 (opposite), irrelevant tolerance and are stubborn
             ExtraNodeData data = new ExtraNodeData(1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
@@ -492,6 +445,137 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                             nodeData.opinion = nodeData.tolerance * neighbourOpinion + (1 - nodeData.tolerance) * nodeData.opinion;
                             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
                             row.setValue(deltaCol, nodeData.getNodeState() ? 1 : 0);
+                            //row.setValue(deltaCol, nodeData.opinion);
+
+                            ///// update node tolerance
+                            // 1) states of interacting nodes is equal => tolerance drops
+                            if (nodeData.getNodeState() == nodeData.getNodeState(neighbourOpinion)) {
+                                nodeData.tolerance = Math.max(nodeData.tolerance - epsilon0 * nodeData.scaling0, 0);
+                            } // 2) states of interacting nodes is different => tolerance increases
+                            else {
+                                nodeData.tolerance = Math.min(nodeData.tolerance + epsilon1 * nodeData.scaling1, 1);
+                            }
+
+                            if (nodeData.getNodeState(oldOpinion) == nodeData.getNodeState()) {
+                                nodeData.scaling0++;
+                                nodeData.scaling1 = 1;
+                            } else {
+                                nodeData.scaling0 = 1;
+                                nodeData.scaling1++;
+                            }
+                            ///// end update node tolerance
+
+                        } // node has neighbours
+                    }// end node is not sleeping
+
+                    nodeData.sleep--; // decrease sleep
+
+                } // end node change state
+            } // end one iteration
+
+            // run poll every 100 iterations
+            if (iteration % POLL_FREQUENCY == 0) {
+                // measure number of nodes with state == true (>0.5)
+                int count = 0;
+                for (Node node : nodes) {
+                    if (nodeDataMap.get(node).getNodeState()) {
+                        count++;
+                    }
+                }
+                convinced.add(count);
+            }
+        } // end simulation
+
+        errorReport = "Convinced: " + convinced.get(convinced.size() - 1) + " (" + (100.0 * convinced.get(convinced.size() - 1) / nodes.size()) + " %)\n";
+        errorReport += "Ended after " + iteration + " iterations\n";
+        //errorReport += "End condition: " + endCondition.toString() + "\n\n";
+//            errorReport += "Infected\n";
+//            for (int inf : infCounter) {
+//                errorReport += inf;
+//            }
+        errorReport += "\nReach evolution:\n\n";
+        for (int rec : convinced) {
+            errorReport += rec + "\n";
+        }
+    }
+
+    private void runToleranceCompete(HierarchicalGraph graph, List<Node> nodes, List<Node> stubbornAgents, AttributeColumn sirCol, AttributeColumn deltaCol) {
+        int iteration = -1; // due to initial ++ increment
+        Random rand = new Random();
+        // reactivation interval for nodes
+        final int minSleep = 5, maxSleep = 50;
+        // tolerance modifications ratio after each interaction	 
+        final float epsilon0 = 0.001f, epsilon1 = 0.01f;
+
+        final Map<Node, ExtraNodeData> nodeDataMap = new HashMap<Node, ExtraNodeData>();
+        final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
+
+        // init: attach extra node data to all nodes
+        for (Node node : nodes) {
+            // default nodes have opinion=0, half tolerance and are non-stubborn
+            ExtraNodeData data = new ExtraNodeData(rand.nextFloat(), 1f, getRandomSleep(rand, minSleep, maxSleep), false);
+            nodeDataMap.put(node, data);
+            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+            row.setValue(sirCol, 0);
+        }
+        int _s = 0;
+        for (Node node : stubbornAgents) {
+            // spreader nodes always have opinion = 0 or 1 (opposite), tolerance=0 always, and are stubborn
+            ExtraNodeData data = new ExtraNodeData((_s % 2 == 0) ? 0f : 1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
+            nodeDataMap.put(node, data);
+            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+            row.setValue(sirCol, 1);
+            _s++;
+        }
+
+        ExtraNodeData nodeData;
+        Node[] neighbours;
+        Node neighbour;
+        float neighbourOpinion, oldOpinion;
+        List<Integer> convinced = new ArrayList<Integer>();
+
+        // long-term stop condition (1k)
+        while (iteration++ < MAX_ITERATIONS) {
+            // iterate nodes
+            for (Node node : nodes) {
+                // if node is stubborn, then ignore
+                nodeData = nodeDataMap.get(node);
+                if (nodeData.isStubborn) {
+                    // just ignore them, stubborn agents do not change at all
+                    AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+                    row.setValue(deltaCol, nodeData.opinion);
+                } else {
+                    // if has slept enough
+                    if (nodeData.sleep <= 0) {
+                        // get list of neighbours
+                        neighbours = graph.getNeighbors(node).toArray();
+
+                        if (neighbours.length > 0) {
+                            // store average neighborhood opinion / or single neighbour's opinion
+                            neighbourOpinion = 0f;
+                            // store old opinion of node for later tolerance update
+                            oldOpinion = nodeData.opinion;
+
+                            // pick average opinion of all neighbours or or one single random neighobur
+                            if (COMPLEX_DIFFUSION) {
+                                // iterate through all friends
+                                for (Node _neighbour : graph.getNeighbors(node)) {
+                                    // get friend's opinion
+                                    neighbourOpinion += nodeDataMap.get(_neighbour).opinion;
+                                }
+                                neighbourOpinion /= (1f * graph.getNeighbors(node).toArray().length);
+                            } else {
+                                // pick one random friend from the vicinity of the node
+                                neighbour = neighbours[rand.nextInt(neighbours.length)];
+                                // get friend's opinion
+                                neighbourOpinion = nodeDataMap.get(neighbour).opinion;
+                            }
+
+                            // update node opinion
+                            nodeData.opinion = nodeData.tolerance * neighbourOpinion + (1 - nodeData.tolerance) * nodeData.opinion;
+                            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+                            //row.setValue(deltaCol, nodeData.getNodeState() ? 1 : 0);
+                            row.setValue(deltaCol, nodeData.opinion);
 
                             ///// update node tolerance
                             // 1) states of interacting nodes is equal => tolerance drops
@@ -665,7 +749,6 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
     }
     // </editor-fold>    
-    
     // <editor-fold defaultstate="collapsed" desc="Misc Area">
     private String errorReport = "";
 
@@ -706,7 +789,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
     public static enum DiffusionAlgorithm {
 
-        SIR, TOLERANCE, SIR_INDIVIDUAL
+        SIR, TOLERANCE, SIR_INDIVIDUAL, TOLERANCE_COMPETE
     }
 
     private enum SIRType {
@@ -743,6 +826,136 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
         boolean getNodeState(float otherState) {
             return otherState >= 0.5f;
+        }
+    }
+
+    private String getCentralityTag(BenchmarkCentrality centrality) {
+        switch (centrality) {
+            case DEGREE:
+                return Degree.DEGREE;
+            case BETWEENNESS:
+                //runBetweenness(graph, attributeModel);
+                return GraphDistance.BETWEENNESS;
+            case EIGENVECTOR:
+                //runEigenvector(graph, attributeModel);
+                return EigenvectorCentrality.EIGENVECTOR;
+            case CLOSENESS:
+                //runBetweenness(graph, attributeModel);
+                return GraphDistance.CLOSENESS;
+            case PAGERANK:
+                //runPageRank(graph, attributeModel);
+                return PageRank.PAGERANK;
+            case HITS:
+                //runHits(graph, attributeModel);
+                return Hits.AUTHORITY;
+            case BDPOWER:
+                //runBetweenness(graph, attributeModel);
+                return GraphDistance.B_TIMES_D_POWER;
+            case BDINFLUENCE:
+                //runBetweenness(graph, attributeModel);
+                return GraphDistance.B_PER_D_POWER;
+            case HINDEX:
+                return InfluenceRankings.HINDEX;
+            case CLUSTERRANK:
+                return InfluenceRankings.CLUSTERRANK;
+            case LEADERRANK:
+                return InfluenceRankings.LEADERRANK;
+            case LOCALCENTRALITY:
+                return InfluenceRankings.LOCALCENTRALITY;
+            default:
+                return null;
+        }
+    }
+
+    private void sortByCentrality(List<Node> nodes, final String centralityTag) {
+        Collections.sort(nodes, new Comparator<Node>() {
+            // sort by used centrality
+            public int compare(Node n1, Node n2) {
+                if (n1.getAttributes().getValue(centralityTag) instanceof Double) {
+                    Double c1 = (Double) n1.getAttributes().getValue(centralityTag);
+                    Double c2 = (Double) n2.getAttributes().getValue(centralityTag);
+                    return c2.compareTo(c1);
+                } else if (n1.getAttributes().getValue(centralityTag) instanceof Float) {
+                    Float c1 = (Float) n1.getAttributes().getValue(centralityTag);
+                    Float c2 = (Float) n2.getAttributes().getValue(centralityTag);
+                    return c2.compareTo(c1);
+                } else {
+                    Integer c1 = (Integer) n1.getAttributes().getValue(centralityTag);
+                    Integer c2 = (Integer) n2.getAttributes().getValue(centralityTag);
+                    return c2.compareTo(c1);
+
+                }
+            }
+        });
+    }
+
+    private void initNodes(List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol) {
+        for (int i = 0; i < nodes.size(); ++i) {
+            Node node = nodes.get(i);
+            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+
+            // set attributes
+            if (i <= pSeeders * nodes.size()) {
+                row.setValue(sirCol, SIRType.INFECTED);
+                row.setValue(deltaCol, 0);
+                infectiousList.add(node);
+            } else {
+                row.setValue(sirCol, SIRType.SUSCEPTIBLE);
+            }
+        }
+    }
+
+    /**
+     * Merge stubborn agent sets A and B by assigning one list element from A,
+     * followed by one from B, and so on, alternatively. After each element is
+     * inserted, the other list is cleared of the other node, if it exists.
+     *
+     * @param infectiousListA
+     * @param infectiousListB
+     * @return
+     */
+    private List<Node> mergeOpinions(List<Node> infectiousListA, List<Node> infectiousListB) {
+        List<Node> infectiousList = new ArrayList<Node>();
+        Node candidate;
+        int cA=0,cB=0;
+
+        while (infectiousListA.size() > 0 && infectiousListB.size() > 0) {
+            if (infectiousListA.size() > 0) {
+                // move first node from A to infectious list
+                candidate = infectiousListA.get(0);
+                infectiousList.add(candidate);               
+                // remove from top of list
+                infectiousListA.remove(0);
+                // and remove it from the other ranking method list (B)
+                removeNode(infectiousListB, candidate);                
+                 cA++;
+            }
+            if (infectiousListB.size() > 0) {
+                // move first node from A to infectious list
+                candidate = infectiousListB.get(0);
+                infectiousList.add(candidate);
+                // remove from top of list
+                infectiousListB.remove(0);
+                // and remove it from the other ranking method list (B)
+                removeNode(infectiousListA, candidate);                
+                cB++;
+            }
+        }
+
+        return infectiousList;
+    }
+
+    private void removeNode(List<Node> nodes, Node toRemove) {
+        Node _node = null;
+        for (Node node : nodes) {
+            if (toRemove.getId() == node.getId()) {
+                _node = node;
+                break;
+            }
+        }
+
+        if (_node != null) {
+            nodes.remove(_node);
         }
     }
 
