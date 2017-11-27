@@ -211,7 +211,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
         //
         // 3) infect top pSeeders% nodes
-        //        
+        //                
         List<Node> infectiousList = new ArrayList<Node>();
 
         if (!diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
@@ -239,7 +239,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
         // prepare log        
         try {
-            File tmp = new File(System.getProperty("user.home") + "/Desktop/sir.txt");
+            File tmp = new File(System.getProperty("user.home") + "/Desktop/tolerance_benchmark.txt");
             PrintWriter pw = new PrintWriter(tmp);
 
             switch (diffusionAlgorithm) {
@@ -274,7 +274,37 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 //            for(Node inf : infectiousList) {
 //                pw.println(inf.getId());
 //            }
-//            pw.close();
+
+            BenchmarkCentrality[] centralities = {BenchmarkCentrality.DEGREE, BenchmarkCentrality.CLOSENESS, BenchmarkCentrality.BETWEENNESS, BenchmarkCentrality.HITS, BenchmarkCentrality.PAGERANK, BenchmarkCentrality.HINDEX, BenchmarkCentrality.LEADERRANK, BenchmarkCentrality.CLUSTERRANK, BenchmarkCentrality.LOCALCENTRALITY, BenchmarkCentrality.EIGENVECTOR};
+            for (BenchmarkCentrality c1 : centralities) {
+                for (BenchmarkCentrality c2 : centralities) {
+                    if (c1.equals(c2)) {
+                        continue;
+                    }
+
+                    if (diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
+                        List<Node> infectiousListA = new ArrayList<Node>();
+                        List<Node> infectiousListB = new ArrayList<Node>();
+
+                        centralityTag = getCentralityTag(c1);  // dbg  
+                        sortByCentrality(nodes, centralityTag);
+                        initNodes(nodes, infectiousListA, sirCol, deltaCol);
+                        pw.print(centralityTag + "-");
+
+                        centralityTag = getCentralityTag(c2);  // dbg  
+                        sortByCentrality(nodes, centralityTag);
+                        initNodes(nodes, infectiousListB, sirCol, deltaCol);
+                        pw.print(centralityTag + ":");
+
+                        infectiousList = mergeOpinions(infectiousListA, infectiousListB);
+
+                        runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
+                        pw.print(shortReport);
+                        pw.println();
+                    }
+                }
+            }
+            pw.close();
 
             //tmp.deleteOnExit(); // no-log on desktop
         } catch (FileNotFoundException ex) {
@@ -627,6 +657,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         for (int rec : convinced) {
             errorReport += rec + "\n";
         }
+        shortReport = "\t\t\t" + (100.0 * convinced.get(convinced.size() - 1) / nodes.size()) + " %\n";
     }
 
     /**
@@ -751,6 +782,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     // </editor-fold>    
     // <editor-fold defaultstate="collapsed" desc="Misc Area">
     private String errorReport = "";
+    private String shortReport = "";
 
     public String getReport() {
         String report = "<HTML> <BODY> <h1>Social Influence Benchmark Report </h1> "
@@ -917,18 +949,18 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     private List<Node> mergeOpinions(List<Node> infectiousListA, List<Node> infectiousListB) {
         List<Node> infectiousList = new ArrayList<Node>();
         Node candidate;
-        int cA=0,cB=0;
+        int cA = 0, cB = 0;
 
         while (infectiousListA.size() > 0 && infectiousListB.size() > 0) {
             if (infectiousListA.size() > 0) {
                 // move first node from A to infectious list
                 candidate = infectiousListA.get(0);
-                infectiousList.add(candidate);               
+                infectiousList.add(candidate);
                 // remove from top of list
                 infectiousListA.remove(0);
                 // and remove it from the other ranking method list (B)
-                removeNode(infectiousListB, candidate);                
-                 cA++;
+                removeNode(infectiousListB, candidate);
+                cA++;
             }
             if (infectiousListB.size() > 0) {
                 // move first node from A to infectious list
@@ -937,7 +969,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 // remove from top of list
                 infectiousListB.remove(0);
                 // and remove it from the other ranking method list (B)
-                removeNode(infectiousListA, candidate);                
+                removeNode(infectiousListA, candidate);
                 cB++;
             }
         }
