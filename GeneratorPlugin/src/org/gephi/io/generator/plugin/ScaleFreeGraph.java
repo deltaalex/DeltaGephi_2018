@@ -34,6 +34,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
     protected boolean powerLawWeights = false;
     protected int fractalSize = 0;
     private boolean simulateGrowth = false;
+    private final boolean DEBUG_GENERATION = true;
 
     @Override
     protected int initialize() {
@@ -53,211 +54,61 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
         progress.switchToIndeterminate();
 
-        // initialize other nodes and edges
-        for (int i = randomGraphSize; i < numberOfNodes; ++i) {
+        if (DEBUG_GENERATION) {
 
-            // create node
-            Node newNode = createNode(graphModel, i, true);
-
-            /**
-             * Define optimization metric(s)
-             */
-            double[] sumpk = getMetricsFromGraph(graphModel, metrics);
-
-            boolean success = false;
-            while (!success) {
-
-                // try to connect the new node to nodes in the network
+            for (int i = randomGraphSize; i < numberOfNodes; ++i) {
+                // node 'i' to be linked to one existing node
+                Node newNode = null;
+                // total fitness in graph
+                int totalDegree = 0;
                 for (Node node : nodeArray) {
+                    totalDegree += graph.getDegree(node);
+                }
 
-                    double[] pi = new double[metrics.length];
-                    // metric of current sfNode
-                    for (int m = 0; m < metrics.length; ++m) {
-                        pi[m] = getNodeMetric(graph, node, metrics[m]);
-                    }
-
-                    // get random value
+                boolean success = false;
+                for (Node node : nodeArray) {
                     double p = random.nextDouble();
-                    // weight of each metric
-                    double w = 1.0 / metrics.length;
-
-                    double fitness = 0.0;
-                    for (int m = 0; m < metrics.length; ++m) {
-                        fitness += w * pi[m] / sumpk[m];
-                    }
-
-                    // connect if p < probability
-                    if (p < fitness) {
-                        Edge edge = createAddDirectedEdge(graphModel, newNode, node);
-                        if (weighted) {
-                            double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
-                            edge.setWeight((float) weight);
+                    // try to connect to each node with probability 'p'
+                    if (p < 1.0 * graph.getDegree(node) / totalDegree) {
+                        if (newNode == null) {
+                            newNode = createNode(graphModel, i, true);
+                            success = true;
                         }
-                        edge = createAddDirectedEdge(graphModel, node, newNode);
-                        if (weighted) {
-                            double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
-                            edge.setWeight((float) weight);
-                        }
-
-                        success = true;
+                        createAddDirectedEdge(graphModel, newNode, node);
+                        createAddDirectedEdge(graphModel, node, newNode);
                     }
+                }
+                if (success) {
+                    nodeArray.add(newNode);
+                } else {
+                    i--;
                 }
             }
-            nodeArray.add(newNode);
 
-            progressTick();
-        }
+            progress.switchToDeterminate(100);
+        } else {
 
-        // add edges to graph until desired average degree is reached
-        final int averageDegree = 10;
-        simulateGrowth = true;
-        if (simulateGrowth && weighted) {
-            // 1. for eeach node, add (averageDegree - degree) new edges
-            for (Node node : nodeArray) {
-                // get friends of a current node
-                Node[] myFriends = graph.getNeighbors(node).toArray();
-                if (myFriends.length == 0) {
-                    continue;
-                }
-                // max new edges can be either the desired degree minus the current degree or
-                // the max number of friends
-                int newEdges = Math.max(averageDegree - graph.getDegree(node), 0);
+            // initialize other nodes and edges
+            for (int i = randomGraphSize; i < numberOfNodes; ++i) {
 
-                // re-compute metrics on graph
+                // create node
+                Node newNode = createNode(graphModel, i, true);
+
+                /**
+                 * Define optimization metric(s)
+                 */
                 double[] sumpk = getMetricsFromGraph(graphModel, metrics);
 
-                // 2. add edge by choosing the best unlinked fitting friend of a neighbor
-                boolean tryConnect = true;
-                for (int e = 0; e < newEdges && tryConnect; ++e) {
+                boolean success = false;
+                while (!success) {
 
-                    // get friends of a random neighbor                    
-                    Node myFriend = myFriends[random.nextInt(myFriends.length)];
-                    Node[] friendFriends = graph.getNeighbors(myFriend).toArray();
-                    if (friendFriends.length <= 1) {
-                        continue;
-                    }
-
-                    // try to connect to friends of target                
-                    while (tryConnect) {
-                        // todo preferential!
-                        Node friendFriend = friendFriends[random.nextInt(friendFriends.length)];
-
-                        // if no edge exists yet
-                        if (!node.equals(friendFriend) && existsNoEdge(graphModel, friendFriend, node)) {
-                            Edge newEdge = createUndirectedEdge(graphModel, node, friendFriend);
-
-                            // 3. put weight W on new edge
-                            double[] pi = new double[metrics.length];
-                            // metric of current target
-                            for (int m = 0; m < metrics.length; ++m) {
-                                pi[m] = getNodeMetric(graph, friendFriend, metrics[m]);
-                            }
-
-                            // weight of each metric
-                            double w = 1.0 / metrics.length;
-
-                            double fitness = 0.0;
-                            for (int m = 0; m < metrics.length; ++m) {
-                                fitness += w * pi[m] / sumpk[m];
-                            }
-
-                            // set weight proportional to fitness                            
-                            newEdge.setWeight((float) fitness);
-
-                            // 4. weight W is subtracted evenly from all neighbors of the current node
-                            float W = (float) fitness / myFriends.length;
-                            for (Node friend : myFriends) {
-                                Edge edge = graph.getEdge(node, friend);
-                                // reduce all weights by W
-                                if (edge != null) {
-                                    edge.setWeight(edge.getWeight() - W);
-
-                                    if (edge.getWeight() <= 0) {
-                                        graph.removeEdge(edge);
-                                    }
-                                }
-                            }
-
-                            break;
-                        }
-
-                        // hack: check for possible links                    
-                        tryConnect = false;
-                        for (Node f : friendFriends) {
-                            if (!node.equals(f)) {
-                                if (existsNoEdge(graphModel, f, node)) {
-                                    tryConnect = true;
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-            }
-        }
-
-        // replicate the whole network fD times
-        if (fractalSize > 0) {
-            // debug only
-//            File flog = new File(System.getProperty("user.home") + "/Desktop/gephi-log.txt");
-//            PrintWriter log = null;
-//            try {
-//                log = new PrintWriter(flog);
-//            } catch (FileNotFoundException ex) {
-//                Exceptions.printStackTrace(ex);
-//                System.exit(13);
-//            }
-
-            Node[][] clusters = new Node[fractalSize][nodeArray.size()];
-
-            // original cluster
-            for (int i = 0; i < nodeArray.size(); ++i) {
-                clusters[0][i] = nodeArray.get(i);
-            }
-
-            // copy other clusters
-            for (int c = 1; c < fractalSize; ++c) {
-                // add nodes
-                for (int i = 0; i < nodeArray.size(); ++i) {
-                    // create node
-                    Node newNode = createNode(graphModel, c * numberOfNodes + i, true);
-                    clusters[c][i] = newNode;
-                }
-
-                // copy edges            
-                for (int i = 0; i < nodeArray.size(); ++i) {
-                    Node source = clusters[c][i];
-
-                    // for each node's neighbor
-                    for (Node neighbor : graph.getNeighbors(nodeArray.get(i)).toArray()) {
-                        Node dest = clusters[c][neighbor.getId() - 1];
-                        Edge edge = createAddDirectedEdge(graphModel, source, dest);
-                        edge = createAddDirectedEdge(graphModel, dest, source);
-                    }
-                }
-            }         
-            
-            // connect clusters                        
-
-            // compute sum of all metrics in network
-            double[] sumpk = new double[metrics.length];
-            for (int m = 0; m < metrics.length; ++m) {
-                sumpk[m] = 0.0;
-                for (Node node : graphModel.getGraph().getNodes()) {
-                    sumpk[m] += getNodeMetric(graphModel.getGraph(), node, metrics[m]);
-                }
-            }          
-            
-            for (Node source : graph.getNodes().toArray()) {
-                for (Node dest : graph.getNodes().toArray()) {
-                    // for all nodes to each other
-                    if (!source.equals(dest)) {
+                    // try to connect the new node to nodes in the network
+                    for (Node node : nodeArray) {
 
                         double[] pi = new double[metrics.length];
                         // metric of current sfNode
                         for (int m = 0; m < metrics.length; ++m) {
-                            pi[m] = getNodeMetric(graph, dest, metrics[m]);
+                            pi[m] = getNodeMetric(graph, node, metrics[m]);
                         }
 
                         // get random value
@@ -272,27 +123,210 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
                         // connect if p < probability
                         if (p < fitness) {
-                            Edge edge = createAddDirectedEdge(graphModel, source, dest);
+                            Edge edge = createAddDirectedEdge(graphModel, newNode, node);
                             if (weighted) {
                                 double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
                                 edge.setWeight((float) weight);
                             }
-                            edge = createAddDirectedEdge(graphModel, dest, source);
+                            edge = createAddDirectedEdge(graphModel, node, newNode);
                             if (weighted) {
                                 double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
                                 edge.setWeight((float) weight);
+                            }
+
+                            success = true;
+                        }
+                    }
+                }
+                nodeArray.add(newNode);
+
+                progressTick();
+            }
+
+            // add edges to graph until desired average degree is reached
+            final int averageDegree = 10;
+            simulateGrowth = true;
+            if (simulateGrowth && weighted) {
+                // 1. for eeach node, add (averageDegree - degree) new edges
+                for (Node node : nodeArray) {
+                    // get friends of a current node
+                    Node[] myFriends = graph.getNeighbors(node).toArray();
+                    if (myFriends.length == 0) {
+                        continue;
+                    }
+                    // max new edges can be either the desired degree minus the current degree or
+                    // the max number of friends
+                    int newEdges = Math.max(averageDegree - graph.getDegree(node), 0);
+
+                    // re-compute metrics on graph
+                    double[] sumpk = getMetricsFromGraph(graphModel, metrics);
+
+                    // 2. add edge by choosing the best unlinked fitting friend of a neighbor
+                    boolean tryConnect = true;
+                    for (int e = 0; e < newEdges && tryConnect; ++e) {
+
+                        // get friends of a random neighbor                    
+                        Node myFriend = myFriends[random.nextInt(myFriends.length)];
+                        Node[] friendFriends = graph.getNeighbors(myFriend).toArray();
+                        if (friendFriends.length <= 1) {
+                            continue;
+                        }
+
+                        // try to connect to friends of target                
+                        while (tryConnect) {
+                            // todo preferential!
+                            Node friendFriend = friendFriends[random.nextInt(friendFriends.length)];
+
+                            // if no edge exists yet
+                            if (!node.equals(friendFriend) && existsNoEdge(graphModel, friendFriend, node)) {
+                                Edge newEdge = createUndirectedEdge(graphModel, node, friendFriend);
+
+                                // 3. put weight W on new edge
+                                double[] pi = new double[metrics.length];
+                                // metric of current target
+                                for (int m = 0; m < metrics.length; ++m) {
+                                    pi[m] = getNodeMetric(graph, friendFriend, metrics[m]);
+                                }
+
+                                // weight of each metric
+                                double w = 1.0 / metrics.length;
+
+                                double fitness = 0.0;
+                                for (int m = 0; m < metrics.length; ++m) {
+                                    fitness += w * pi[m] / sumpk[m];
+                                }
+
+                                // set weight proportional to fitness                            
+                                newEdge.setWeight((float) fitness);
+
+                                // 4. weight W is subtracted evenly from all neighbors of the current node
+                                float W = (float) fitness / myFriends.length;
+                                for (Node friend : myFriends) {
+                                    Edge edge = graph.getEdge(node, friend);
+                                    // reduce all weights by W
+                                    if (edge != null) {
+                                        edge.setWeight(edge.getWeight() - W);
+
+                                        if (edge.getWeight() <= 0) {
+                                            graph.removeEdge(edge);
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            // hack: check for possible links                    
+                            tryConnect = false;
+                            for (Node f : friendFriends) {
+                                if (!node.equals(f)) {
+                                    if (existsNoEdge(graphModel, f, node)) {
+                                        tryConnect = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+
+            // replicate the whole network fD times
+            if (fractalSize > 0) {
+                // debug only
+//            File flog = new File(System.getProperty("user.home") + "/Desktop/gephi-log.txt");
+//            PrintWriter log = null;
+//            try {
+//                log = new PrintWriter(flog);
+//            } catch (FileNotFoundException ex) {
+//                Exceptions.printStackTrace(ex);
+//                System.exit(13);
+//            }
+
+                Node[][] clusters = new Node[fractalSize][nodeArray.size()];
+
+                // original cluster
+                for (int i = 0; i < nodeArray.size(); ++i) {
+                    clusters[0][i] = nodeArray.get(i);
+                }
+
+                // copy other clusters
+                for (int c = 1; c < fractalSize; ++c) {
+                    // add nodes
+                    for (int i = 0; i < nodeArray.size(); ++i) {
+                        // create node
+                        Node newNode = createNode(graphModel, c * numberOfNodes + i, true);
+                        clusters[c][i] = newNode;
+                    }
+
+                    // copy edges            
+                    for (int i = 0; i < nodeArray.size(); ++i) {
+                        Node source = clusters[c][i];
+
+                        // for each node's neighbor
+                        for (Node neighbor : graph.getNeighbors(nodeArray.get(i)).toArray()) {
+                            Node dest = clusters[c][neighbor.getId() - 1];
+                            Edge edge = createAddDirectedEdge(graphModel, source, dest);
+                            edge = createAddDirectedEdge(graphModel, dest, source);
+                        }
+                    }
+                }
+
+                // connect clusters                        
+                // compute sum of all metrics in network
+                double[] sumpk = new double[metrics.length];
+                for (int m = 0; m < metrics.length; ++m) {
+                    sumpk[m] = 0.0;
+                    for (Node node : graphModel.getGraph().getNodes()) {
+                        sumpk[m] += getNodeMetric(graphModel.getGraph(), node, metrics[m]);
+                    }
+                }
+
+                for (Node source : graph.getNodes().toArray()) {
+                    for (Node dest : graph.getNodes().toArray()) {
+                        // for all nodes to each other
+                        if (!source.equals(dest)) {
+
+                            double[] pi = new double[metrics.length];
+                            // metric of current sfNode
+                            for (int m = 0; m < metrics.length; ++m) {
+                                pi[m] = getNodeMetric(graph, dest, metrics[m]);
+                            }
+
+                            // get random value
+                            double p = random.nextDouble();
+                            // weight of each metric
+                            double w = 1.0 / metrics.length;
+
+                            double fitness = 0.0;
+                            for (int m = 0; m < metrics.length; ++m) {
+                                fitness += w * pi[m] / sumpk[m];
+                            }
+
+                            // connect if p < probability
+                            if (p < fitness) {
+                                Edge edge = createAddDirectedEdge(graphModel, source, dest);
+                                if (weighted) {
+                                    double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
+                                    edge.setWeight((float) weight);
+                                }
+                                edge = createAddDirectedEdge(graphModel, dest, source);
+                                if (weighted) {
+                                    double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
+                                    edge.setWeight((float) weight);
+                                }
                             }
                         }
                     }
                 }
+
+                clusters = null;
+                //log.close();
             }
 
-            clusters = null;
-            //log.close();
+            nodeArray = null;
+            progress.switchToDeterminate(100);
         }
-
-        nodeArray = null;
-        progress.switchToDeterminate(100);
     }
 
     protected final double[] getMetricsFromGraph(GraphModel graphModel, Metric[] metrics) {
@@ -440,7 +474,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
     public void setFractalSize(int fractalSize) {
         this.fractalSize = fractalSize;
-    }        
+    }
 
     public void setWeighted(boolean weighted) {
         this.weighted = weighted;
@@ -477,7 +511,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
     public int getFractalSize() {
         return fractalSize;
     }
-    
+
     public boolean getWeighted() {
         return weighted;
     }
