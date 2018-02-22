@@ -37,7 +37,7 @@ public class EvolvingWeights implements Statistics, LongTask {
      * individual random timeout . Dependent edges are activated in a
      * centralized manner (one per iteration).
      */
-    private boolean independentEdges = true;
+    private EdgeSimulationType simType = EdgeSimulationType.INDEPENDENT_PREFERENTIAL;
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -73,11 +73,7 @@ public class EvolvingWeights implements Statistics, LongTask {
      */
     private double beta = 0.5;
 
-    // <editor-fold defaultstate="collapsed" desc="Getters/Setters">      
-    public void setIndependentEdges(boolean independentEdges) {
-        this.independentEdges = independentEdges;
-    }
-
+    // <editor-fold defaultstate="collapsed" desc="Getters/Setters">         
     public void setMaxIterations(int maxIterations) {
         this.maxIterations = maxIterations;
     }
@@ -96,10 +92,6 @@ public class EvolvingWeights implements Statistics, LongTask {
 
     public void setBeta(double beta) {
         this.beta = beta;
-    }
-
-    public boolean isIndependentEdges() {
-        return independentEdges;
     }
 
     public int getMaxIterations() {
@@ -126,10 +118,17 @@ public class EvolvingWeights implements Statistics, LongTask {
     // <editor-fold defaultstate="collapsed" desc="Execution">
     public void execute(GraphModel graphModel, AttributeModel attributeModel) {
         HierarchicalGraph graph = graphModel.getHierarchicalGraphVisible();
-        if (independentEdges) {
-            executeIndependent(graph, attributeModel);
-        } else {
-            execute(graph, attributeModel);
+        switch (simType) {
+            case INDEPENDENT_UNIFORM:
+                executeIndependentUniformEvents(graph, attributeModel);
+                break;
+            case DEPENDENT:
+                execute(graph, attributeModel);
+                break;
+            case INDEPENDENT_PREFERENTIAL:
+                executeIndependentPreferentialEvents(graph, attributeModel);
+                break;
+
         }
     }
 
@@ -239,7 +238,7 @@ public class EvolvingWeights implements Statistics, LongTask {
         graph.readUnlockAll();
     }
 
-    public void executeIndependent(HierarchicalGraph graph, AttributeModel attributeModel) {
+    public void executeIndependentUniformEvents(HierarchicalGraph graph, AttributeModel attributeModel) {
 
         // list of edges
         List<Edge> edges = new ArrayList<Edge>();
@@ -250,6 +249,8 @@ public class EvolvingWeights implements Statistics, LongTask {
         Random rand = new Random();
         int timeouts[] = new int[E];
         int timers[] = new int[E];
+        double _beta[] = new double[E];
+        double _alpha[] = new double[E];
         double alphas[] = new double[E];
 
         // initialize edge timeout values >=1
@@ -260,9 +261,11 @@ public class EvolvingWeights implements Statistics, LongTask {
         for (int i = 0; i < E; ++i) {
             timers[i] = 0;
         }
-        // initialize edge amplitudes
+        // initialize edge amplitudes and dampenings
         for (int i = 0; i < E; ++i) {
-            alphas[i] = alpha;
+            _alpha[i] = rand.nextDouble();
+            _beta[i] = rand.nextDouble();
+            alphas[i] = _alpha[i];
         }
 
         graph.readLock();
@@ -284,9 +287,9 @@ public class EvolvingWeights implements Statistics, LongTask {
                 if (timeouts[i] <= 0) {
 
                     // compute current weight
-                    _wi = alphas[i] * Math.exp(-beta * timers[i]); // apply dampening
+                    _wi = alphas[i] * Math.exp(-_beta[i] * timers[i]); // apply dampening
                     // update current alpha
-                    _ai = Math.min(1.0, _wi + alpha); // because: _wij + alpha*e^0
+                    _ai = Math.min(1.0, _wi + _alpha[i]); // because: _wij + alpha*e^0
 
                     alphas[i] = _ai;
                     timers[i] = 0;
@@ -310,10 +313,114 @@ public class EvolvingWeights implements Statistics, LongTask {
             double weight;
 
             for (int i = 0; i < E; ++i) {
-                weight = alphas[i] * Math.exp(-beta * timers[i]);
+                weight = alphas[i] * Math.exp(-_beta[i] * timers[i]);
                 pw.println(weight);
             }
             pw.close();
+
+            //tmp.deleteOnExit(); // no-log on desktop
+        } catch (FileNotFoundException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+
+        progress.switchToDeterminate(100);
+        progress.finish();
+        graph.readUnlockAll();
+    }
+
+    public void executeIndependentPreferentialEvents(HierarchicalGraph graph, AttributeModel attributeModel) {
+
+        // list of edges
+        List<Edge> edges = new ArrayList<Edge>();
+        for (Edge edge : graph.getEdges()) {
+            edges.add(edge);
+        }
+        int E = edges.size();
+        Random rand = new Random();
+        // keeps track of how many times an edge was activated; all start with '1'
+        int activated[] = new int[E];
+        // keeps track of delta time since last interaction
+        int timers[] = new int[E];
+        // custom alpha for an edge
+        double _alpha[] = new double[E];
+        // custom beta for an edge
+        double _beta[] = new double[E];
+        // keeps track of weight of an edge in time
+        double alphas[] = new double[E];
+
+        // initialize edge amplitudes, dampenings, activation, timers
+        for (int i = 0; i < E; ++i) {
+            timers[i] = 0;
+            activated[i] = 1;
+            _alpha[i] = rand.nextDouble();
+            _beta[i] = rand.nextDouble();
+            alphas[i] = _alpha[i];
+        }
+
+        graph.readLock();
+        Progress.start(progress);
+        //progress.switchToIndeterminate();
+
+        //
+        // generate interactions: all edges with current timeout==0
+        //        
+
+        double _ai, _wi;
+
+        for (int t = 0; t < maxIterations && !isCanceled(); ++t) {
+            //
+            // 1. Activate edges preferentially
+            // 1.1. Compute edge total fitness (sum of activations)
+            int totalFitness = 0;
+            for (int i = 0; i < E; ++i) {
+                totalFitness += activated[i];
+                // increase time for each edge
+                timers[i]++;
+            }
+
+            // 1.2. Try each edge with probability            
+            boolean success = false;
+            for (int i = 0; i < E; ++i) {
+                double p = rand.nextDouble();
+                // try to activate with probability 'p'
+                if (p < 1.0 * activated[i] / totalFitness) {
+                    //
+                    // 1.3. Edge activation
+                    // compute current weight
+                    _wi = alphas[i] * Math.exp(-_beta[i] * timers[i]); // apply dampening
+                    // update current alpha
+                    _ai = Math.min(1.0, _wi + _alpha[i]); // because: _wij + alpha*e^0
+
+                    alphas[i] = _ai;
+                    timers[i] = 0;
+
+                    success = true; // dbg
+                    edgesActivated++; // dbg
+                    activated[i]++;// increase edge fitness
+                }
+            }
+            if (!success) {
+                failedActivationsPerIteration++;
+            }
+            progress.progress(100 * t / maxIterations);
+        }
+
+        // prepare log        
+        try {
+            File tmp1 = new File(System.getProperty("user.home") + "/Desktop/weights.txt");
+            File tmp2 = new File(System.getProperty("user.home") + "/Desktop/activations.txt");
+            PrintWriter pw1 = new PrintWriter(tmp1);
+            PrintWriter pw2 = new PrintWriter(tmp2);
+
+            double weight;
+
+            for (int i = 0; i < E; ++i) {
+                weight = alphas[i] * Math.exp(-_beta[i] * timers[i]);
+                pw1.println(weight);
+                pw2.println(activated[i]);
+            }
+            pw1.close();
+            pw2.close();
 
             //tmp.deleteOnExit(); // no-log on desktop
         } catch (FileNotFoundException ex) {
@@ -328,10 +435,16 @@ public class EvolvingWeights implements Statistics, LongTask {
     // <editor-fold defaultstate="collapsed" desc="Misc Area">
     private String errorReport = "";
     private String shortReport = "";
+    private int edgesActivated = 0, failedActivationsPerIteration = 0;
 
     public String getReport() {
-        String report = "<HTML> <BODY> <h1>Social Influence Benchmark Report </h1> "
+        String report = "<HTML> <BODY> <h1>Edge weight evolution</h1> "
                 + "<hr><br>";
+
+        report += "Iterations: " + maxIterations + "<br>";
+        report += "Total edges activated: " + edgesActivated + "<br>";
+        report += "Failed iterations to activate any edge: " + failedActivationsPerIteration + "<br>";
+        report += "Successful iterations to activate any edge: " + (maxIterations - failedActivationsPerIteration) + "<br>";
 
         report += errorReport + "</BODY></HTML>";
 
@@ -357,6 +470,11 @@ public class EvolvingWeights implements Statistics, LongTask {
      */
     public void setProgressTicket(ProgressTicket progressTicket) {
         this.progress = progressTicket;
+    }
+
+    public enum EdgeSimulationType {
+
+        DEPENDENT, INDEPENDENT_UNIFORM, INDEPENDENT_PREFERENTIAL
     }
 
     private class ExtraNodeData {
