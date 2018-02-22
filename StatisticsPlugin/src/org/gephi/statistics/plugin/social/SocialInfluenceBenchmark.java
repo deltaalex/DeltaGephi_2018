@@ -220,11 +220,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             List<Node> infectiousListA = new ArrayList<Node>();
             List<Node> infectiousListB = new ArrayList<Node>();
 
-            centralityTag = getCentralityTag(BenchmarkCentrality.BETWEENNESS);  // dbg  
+            centralityTag = getCentralityTag(BenchmarkCentrality.CLOSENESS);  // dbg  
             sortByCentrality(nodes, centralityTag);
             initNodes(nodes, infectiousListA, sirCol, deltaCol);
 
-            centralityTag = getCentralityTag(BenchmarkCentrality.DEGREE);  // dbg  
+            centralityTag = getCentralityTag(BenchmarkCentrality.HINDEX);  // dbg  
             sortByCentrality(nodes, centralityTag);
             initNodes(nodes, infectiousListB, sirCol, deltaCol);
 
@@ -242,7 +242,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             File tmp = new File(System.getProperty("user.home") + "/Desktop/tolerance_benchmark.txt");
             PrintWriter pw = new PrintWriter(tmp);
 
-            switch (diffusionAlgorithm) {
+            /*switch (diffusionAlgorithm) {
                 case SIR:
                     runSIR(graph, nodes, infectiousList, sirCol, deltaCol);
                     break;
@@ -255,7 +255,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 case TOLERANCE_COMPETE:
                     runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
                     break;
-            }
+            }*/
 
             /*pw.println("Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)");
              pw.println("Ended after " + iteration + " iterations.");
@@ -359,7 +359,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             // infect neighobrs
             changeToInfectious.clear();
             for (Node node : infectiousList) {
-                // go throug all neighbors of eahc infected node
+                // go throug all neighbors of each infected node
                 for (Node neighbor : graph.getNeighbors(node)) {
                     // if neighbor is susceptible
                     if (getSIRType(neighbor).equals(SIRType.SUSCEPTIBLE)) {
