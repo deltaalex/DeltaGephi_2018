@@ -37,7 +37,7 @@ public class EvolvingWeights implements Statistics, LongTask {
      * individual random timeout . Dependent edges are activated in a
      * centralized manner (one per iteration).
      */
-    private EdgeSimulationType simType = EdgeSimulationType.INDEPENDENT_PREFERENTIAL;
+    private EdgeSimulationType simType = EdgeSimulationType.INDEPENDENT_PREFERENTIAL_ACTIVATION;
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -53,7 +53,7 @@ public class EvolvingWeights implements Statistics, LongTask {
     /**
      * Stop condition for evolution processes
      */
-    private int maxIterations = 1000;
+    private int maxIterations = 10000;
     /**
      * How often the weights should be polled during the simulation
      */
@@ -125,8 +125,11 @@ public class EvolvingWeights implements Statistics, LongTask {
             case DEPENDENT:
                 execute(graph, attributeModel);
                 break;
-            case INDEPENDENT_PREFERENTIAL:
-                executeIndependentPreferentialEvents(graph, attributeModel);
+            case INDEPENDENT_PREFERENTIAL_ACTIVATION:
+                executeIndependentPreferentialEventsWithActivation(graph, attributeModel);
+                break;
+            case INDEPENDENT_PREFERENTIAL_WEIGHT:
+                executeIndependentPreferentialEventsWithWeight(graph, attributeModel);
                 break;
 
         }
@@ -328,7 +331,7 @@ public class EvolvingWeights implements Statistics, LongTask {
         graph.readUnlockAll();
     }
 
-    public void executeIndependentPreferentialEvents(HierarchicalGraph graph, AttributeModel attributeModel) {
+    public void executeIndependentPreferentialEventsWithActivation(HierarchicalGraph graph, AttributeModel attributeModel) {
 
         // list of edges
         List<Edge> edges = new ArrayList<Edge>();
@@ -337,10 +340,12 @@ public class EvolvingWeights implements Statistics, LongTask {
         }
         int E = edges.size();
         Random rand = new Random();
+        final double timeUnit = 0.01;
+
         // keeps track of how many times an edge was activated; all start with '1'
         int activated[] = new int[E];
         // keeps track of delta time since last interaction
-        int timers[] = new int[E];
+        double timers[] = new double[E];
         // custom alpha for an edge
         double _alpha[] = new double[E];
         // custom beta for an edge
@@ -350,7 +355,7 @@ public class EvolvingWeights implements Statistics, LongTask {
 
         // initialize edge amplitudes, dampenings, activation, timers
         for (int i = 0; i < E; ++i) {
-            timers[i] = 0;
+            timers[i] = 0.0;
             activated[i] = 1;
             _alpha[i] = rand.nextDouble();
             _beta[i] = rand.nextDouble();
@@ -375,7 +380,7 @@ public class EvolvingWeights implements Statistics, LongTask {
             for (int i = 0; i < E; ++i) {
                 totalFitness += activated[i];
                 // increase time for each edge
-                timers[i]++;
+                timers[i] += timeUnit;
             }
 
             // 1.2. Try each edge with probability            
@@ -392,7 +397,7 @@ public class EvolvingWeights implements Statistics, LongTask {
                     _ai = Math.min(1.0, _wi + _alpha[i]); // because: _wij + alpha*e^0
 
                     alphas[i] = _ai;
-                    timers[i] = 0;
+                    timers[i] = 0.0;
 
                     success = true; // dbg
                     edgesActivated++; // dbg
@@ -418,6 +423,117 @@ public class EvolvingWeights implements Statistics, LongTask {
                 weight = alphas[i] * Math.exp(-_beta[i] * timers[i]);
                 pw1.println(weight);
                 pw2.println(activated[i]);
+            }
+            pw1.close();
+            pw2.close();
+
+            //tmp.deleteOnExit(); // no-log on desktop
+        } catch (FileNotFoundException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+
+        progress.switchToDeterminate(100);
+        progress.finish();
+        graph.readUnlockAll();
+    }
+
+    public void executeIndependentPreferentialEventsWithWeight(HierarchicalGraph graph, AttributeModel attributeModel) {
+
+        // list of edges
+        List<Edge> edges = new ArrayList<Edge>();
+        for (Edge edge : graph.getEdges()) {
+            edges.add(edge);
+        }
+        int E = edges.size();
+        Random rand = new Random();
+        final double timeUnit = 1.0;
+
+        // keeps track of edge weight
+        double weights[] = new double[E];
+        // keeps track of delta time since last interaction
+        double timers[] = new double[E];
+        // custom alpha for an edge
+        double _alpha[] = new double[E];
+        // custom beta for an edge
+        double _beta[] = new double[E];
+        // keeps track of weight of an edge in time
+        double alphas[] = new double[E];
+
+        // initialize edge amplitudes, dampenings, activation, timers
+        for (int i = 0; i < E; ++i) {
+            timers[i] = 0.0;
+            _alpha[i] = rand.nextDouble();
+            _beta[i] = rand.nextDouble();
+            weights[i] = _alpha[i];
+            alphas[i] = _alpha[i];
+        }
+
+        graph.readLock();
+        Progress.start(progress);
+        //progress.switchToIndeterminate();
+
+        //
+        // generate interactions: all edges with current timeout==0
+        //        
+
+        double _ai, _wi;
+
+        for (int t = 0; t < maxIterations && !isCanceled(); ++t) {
+            //
+            // 1. Activate edges preferentially
+            // 1.1. Compute edge total fitness (sum of weights)
+            double totalFitness = 0.0;
+            for (int i = 0; i < E; ++i) {
+                totalFitness += weights[i];
+                // increase time for each edge
+                timers[i] += timeUnit;
+            }
+
+            // 1.2. Try each edge with probability            
+            boolean success = false;
+            for (int i = 0; i < E; ++i) {
+                double p = rand.nextDouble();
+                // try to activate with probability 'p' given by current weight
+                if (p < 1.0 * weights[i] / totalFitness) {
+                    //
+                    // 1.3. Edge activation
+                    // compute current weight
+                    _wi = alphas[i] * Math.exp(-_beta[i] * timers[i]); // apply dampening
+                    // update current alpha
+                    _ai = Math.min(1.0, _wi + _alpha[i]); // because: _wij + alpha*e^0
+
+                    alphas[i] = _ai;
+                    timers[i] = 0.0;
+
+                    success = true; // dbg
+                    edgesActivated++; // dbg                    
+                }
+                // always compute current weight
+                // 1) fitness is current weight[i] (power-law?)
+                weights[i] = alphas[i] * Math.exp(-_beta[i] * timers[i]);
+                // 2) fitness is current alphas[i] (random?)
+                //weights[i] = alphas[i];
+
+            }
+            if (!success) {
+                failedActivationsPerIteration++;
+            }
+            progress.progress(100 * t / maxIterations);
+        }
+
+        // prepare log        
+        try {
+            File tmp1 = new File(System.getProperty("user.home") + "/Desktop/weights.txt");
+            File tmp2 = new File(System.getProperty("user.home") + "/Desktop/activations.txt");
+            PrintWriter pw1 = new PrintWriter(tmp1);
+            PrintWriter pw2 = new PrintWriter(tmp2);
+
+            double weight;
+
+            for (int i = 0; i < E; ++i) {
+                weight = alphas[i] * Math.exp(-_beta[i] * timers[i]);
+                pw1.println(weight);
+                pw2.println(weights[i]);
             }
             pw1.close();
             pw2.close();
@@ -474,7 +590,7 @@ public class EvolvingWeights implements Statistics, LongTask {
 
     public enum EdgeSimulationType {
 
-        DEPENDENT, INDEPENDENT_UNIFORM, INDEPENDENT_PREFERENTIAL
+        DEPENDENT, INDEPENDENT_UNIFORM, INDEPENDENT_PREFERENTIAL_ACTIVATION, INDEPENDENT_PREFERENTIAL_WEIGHT
     }
 
     private class ExtraNodeData {
