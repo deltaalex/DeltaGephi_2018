@@ -114,7 +114,7 @@ public class GiantComponentBuilder implements FilterBuilder {
             }
 
             attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel(graph.getGraphModel().getWorkspace());
-            cc.weaklyConnected(undirectedGraph, attributeModel);
+            cc.weaklyConnected(undirectedGraph, attributeModel);            
             componentId = cc.getGiantComponent();
             column = attributeModel.getNodeTable().getColumn(ConnectedComponents.WEAKLY);
 

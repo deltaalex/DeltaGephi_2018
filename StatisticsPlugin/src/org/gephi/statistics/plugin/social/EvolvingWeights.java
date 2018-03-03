@@ -66,12 +66,12 @@ public class EvolvingWeights implements Statistics, LongTask {
      * Alpha: amplitude gained in weight after an interaction. Unique for all
      * nodes. The higher the value the higher the weights are in general.
      */
-    private double alpha = 0.5;
+    private double alpha = 1.0;
     /**
      * Beta: damping factor for weight. Unique for all nodes. The smaller the
      * value the more linear and slower the weights decrease.
      */
-    private double beta = 0.5;
+    private double beta = 1.0;
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">         
     public void setMaxIterations(int maxIterations) {
@@ -563,7 +563,7 @@ public class EvolvingWeights implements Statistics, LongTask {
         }
         int E = edges.size();
         Random rand = new Random();
-        final double timeUnit = 0.1;
+        final double timeUnit = 1.0;
         final double outputFilter = 1e-4;
 
         // keeps track of edge weight
@@ -579,9 +579,9 @@ public class EvolvingWeights implements Statistics, LongTask {
 
         // initialize edge amplitudes, dampenings, activation, timers
         for (int i = 0; i < E; ++i) {
-            timers[i] = 0.0;
-            _alpha[i] = rand.nextDouble();
-            _beta[i] = rand.nextDouble();
+            timers[i] = 1.0;
+            _alpha[i] = alpha;//rand.nextDouble();
+            _beta[i] = beta;//rand.nextDouble();
             weights[i] = _alpha[i];
             alphas[i] = _alpha[i];
         }
@@ -615,26 +615,23 @@ public class EvolvingWeights implements Statistics, LongTask {
                 if (p < 1.0 * weights[i] / totalFitness) {
                     //
                     // 1.3. Edge activation
-                    // compute current weight as linear function wi = ai * 1/ti^bi, 1>bi>0
-                    if (timers[i] == 0) {
-                        _wi = 1.0;
-                    } else {
-                        _wi = alphas[i] * Math.pow(timers[i], -_beta[i]);
-                    }
+                    // compute current weight as power-law function wi = ai * ti^-bi, 1>bi>0
+                    _wi = alphas[i] * Math.pow(timers[i], -_beta[i]);
+
                     // update current alpha
                     _ai = Math.min(1.0, _wi + _alpha[i]); // because: _wij + alpha*e^0
 
                     alphas[i] = _ai;
-                    timers[i] = 0.0;
+                    timers[i] = 1.0;
 
                     success = true; // dbg
                     edgesActivated++; // dbg                    
                 }
                 // always compute current weight
-                // 1) fitness is current weight[i] (linear?)
-                //weights[i] = alphas[i] + _beta[i] * timers[i];
+                // 1) fitness is current weight[i] (power-law?)
+                weights[i] = alphas[i] * Math.pow(timers[i], -_beta[i]);
                 // 2) fitness is current alphas[i] (random?)
-                weights[i] = alphas[i];
+                //weights[i] = alphas[i];
 
             }
             if (!success) {
@@ -653,11 +650,8 @@ public class EvolvingWeights implements Statistics, LongTask {
             double weight;
 
             for (int i = 0; i < E; ++i) {
-                if (timers[i] == 0) {
-                    weight = 1.0;
-                } else {
-                    weight = alphas[i] * Math.pow(timers[i], -_beta[i]);
-                }
+                weight = alphas[i] * Math.pow(timers[i], -_beta[i]);
+
                 if (weight > outputFilter) {
                     pw1.println(weight);
                     pw2.println(weights[i]);
@@ -676,6 +670,7 @@ public class EvolvingWeights implements Statistics, LongTask {
         graph.readUnlockAll();
     }
     // </editor-fold>    
+   
     // <editor-fold defaultstate="collapsed" desc="Misc Area">
     private String errorReport = "";
     private String shortReport = "";
