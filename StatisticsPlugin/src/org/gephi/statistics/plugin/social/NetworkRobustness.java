@@ -427,6 +427,12 @@ public class NetworkRobustness implements Statistics, LongTask {
                     case BETWEENNESS:
                         return -1 * ((Double) (n1.getAttributes().getValue(GraphDistance.BETWEENNESS)))
                                 .compareTo(((Double) (n2.getAttributes().getValue(GraphDistance.BETWEENNESS))));
+                    case CLUSTERING:
+                        return -1 * ((Double) (n1.getAttributes().getValue(ClusteringCoefficient.CLUSTERING_COEFF)))
+                                .compareTo(((Double) (n2.getAttributes().getValue(ClusteringCoefficient.CLUSTERING_COEFF))));
+                    case EIGENVECTOR:
+                        return -1 * ((Double) (n1.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR)))
+                                .compareTo(((Double) (n2.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR))));
                     default:
                         return 0;
                 }
@@ -441,6 +447,12 @@ public class NetworkRobustness implements Statistics, LongTask {
                     break;
                 case BETWEENNESS:
                     fitness = (Double) node.getAttributes().getValue(GraphDistance.BETWEENNESS);
+                    break;
+                case CLUSTERING:
+                    fitness = (Double) node.getAttributes().getValue(ClusteringCoefficient.CLUSTERING_COEFF);
+                    break;
+                case EIGENVECTOR:
+                    fitness = (Double) node.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR);
                     break;
             }
 
@@ -463,7 +475,7 @@ public class NetworkRobustness implements Statistics, LongTask {
                     }
 
                     // create edge
-                    if (rand.nextDouble() < map.get(otherNode).fitness) {
+                    if (rand.nextDouble() < map.get(otherNode).fitness / totalFitness) {
                         graph.addEdge(graph.getGraphModel().factory().newEdge(node, otherNode));
                         success = true;
                         break;

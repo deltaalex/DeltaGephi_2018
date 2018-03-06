@@ -116,11 +116,11 @@
             <Font component="labelRandomize4" property="font" relativeSize="true" size="-1"/>
           </FontInfo>
         </Property>
-        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-          <Color blue="66" green="66" red="66" type="rgb"/>
-        </Property>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
           <ResourceString bundle="org/gephi/ui/statistics/plugin/social/Bundle.properties" key="NetworkRobustnessPanel.labelRandomize4.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+        </Property>
+        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+          <Color blue="66" green="66" red="66" type="rgb"/>
         </Property>
       </Properties>
     </Component>
@@ -146,14 +146,14 @@
     </Component>
     <Component class="javax.swing.JLabel" name="lSolutionSize3">
       <Properties>
-        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-          <Color blue="66" green="66" red="66" type="rgb"/>
-        </Property>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
           <ResourceString bundle="org/gephi/ui/statistics/plugin/social/Bundle.properties" key="NetworkRobustnessPanel.lSolutionSize3.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
         </Property>
         <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
           <ResourceString bundle="org/gephi/ui/statistics/plugin/social/Bundle.properties" key="NetworkRobustnessPanel.lSolutionSize3.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+        </Property>
+        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+          <Color blue="66" green="66" red="66" type="rgb"/>
         </Property>
       </Properties>
       <AuxValues>
@@ -182,14 +182,14 @@
     </Component>
     <Component class="javax.swing.JLabel" name="lSolutionSize5">
       <Properties>
-        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-          <Color blue="66" green="66" red="66" type="rgb"/>
-        </Property>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
           <ResourceString bundle="org/gephi/ui/statistics/plugin/social/Bundle.properties" key="NetworkRobustnessPanel.lSolutionSize5.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
         </Property>
         <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
           <ResourceString bundle="org/gephi/ui/statistics/plugin/social/Bundle.properties" key="NetworkRobustnessPanel.lSolutionSize5.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+        </Property>
+        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+          <Color blue="66" green="66" red="66" type="rgb"/>
         </Property>
       </Properties>
       <AuxValues>
@@ -218,14 +218,14 @@
     </Component>
     <Component class="javax.swing.JLabel" name="lSolutionSize6">
       <Properties>
-        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-          <Color blue="66" green="66" red="66" type="rgb"/>
-        </Property>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
           <ResourceString bundle="org/gephi/ui/statistics/plugin/social/Bundle.properties" key="NetworkRobustnessPanel.lSolutionSize6.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
         </Property>
         <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
           <ResourceString bundle="org/gephi/ui/statistics/plugin/social/Bundle.properties" key="NetworkRobustnessPanel.lSolutionSize6.toolTipText" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+        </Property>
+        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+          <Color blue="66" green="66" red="66" type="rgb"/>
         </Property>
       </Properties>
       <AuxValues>
@@ -246,8 +246,8 @@
             <StringItem index="0" value="Random"/>
             <StringItem index="1" value="Degree"/>
             <StringItem index="2" value="Betweenness"/>
-            <StringItem index="3" value="Clustering coefficient"/>
-            <StringItem index="4" value="Eigenvector"/>
+            <StringItem index="3" value="Eigenvector"/>
+            <StringItem index="4" value="Clustering coefficient"/>
             <StringItem index="5" value=" "/>
           </StringArray>
         </Property>
