@@ -30,7 +30,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
 
     public enum TYPE {
 
-        WS, HK, Tv, uSF
+        WS, HK, Tv, uSF, SFE
     }
     private TYPE type = TYPE.WS;
 
@@ -52,6 +52,9 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
             return;
         } else if (type.equals(TYPE.uSF)) {
             createUncorrelatedSFNetwork(cell, numberOfNodes, graphModel);
+            return;
+        } else if (type.equals(TYPE.SFE)) {
+            createSFEdgeNetwork(cell, numberOfNodes, graphModel);
             return;
         }
 
@@ -298,7 +301,58 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
                 animateEdge();
             }
         }
+    }
 
+    /**
+     * Alex & Mihai network Creates a network whose edges are added between any
+     * two nodes with a probability indirect proportional to the distance
+     * between the two nodes. The results is a power-law distribution of edges
+     * based on distance: very few long range links -- many short range links.
+     * Distance between two nodes is given by their initial random position in a
+     * square of size 100x100 / 1000x1000 etc. Goal: obtain a SW network from a
+     * preferential attachment principle
+     */
+    private void createSFEdgeNetwork(Cell cell, int N, GraphModel graphModel) {
+        Random rand = new Random();
+        Node n1, n2;
+
+        // K used as distance here!!!      
+        // create the N nodes with spatial coordinates (0,K) x (0,K);
+        for (int i = 0; i < N; ++i) {
+            // create new node
+            Node newNode = graphModel.factory().newNode();
+            // initialize node
+            newNode.getNodeData().setSize(NODE_SIZE);
+            //newNode.getNodeData().setLabel(Integer.toString(i));
+            newNode.getNodeData().setX(rand.nextFloat() * K);
+            newNode.getNodeData().setY(rand.nextFloat() * K);
+            // add to graph
+            graphModel.getGraph().addNode(newNode);
+            cell.addNode(newNode);
+            //Sleep some time
+            animateNode();
+        }
+
+        // for each node, try to add edge
+        for (int i = 0; i < N - 1; ++i) {
+            for (int j = i + 1; j < N; ++j) {
+                n1 = cell.getNodes().get(i);
+                n2 = cell.getNodes().get(j);
+                // probability of edge(1,2) = 1/distance(1,2)
+                if (rand.nextDouble() < 1.0 / Math.pow(distanceXY(n1, n2), 2)) {
+                    // create edge
+                    Edge edge = graphModel.factory().newEdge(n1, n2);
+                    graphModel.getGraph().addEdge(edge);
+                    //Sleep some time
+                    animateEdge();
+                }
+            }
+        }
+    }
+
+    private double distanceXY(Node n1, Node n2) {
+        return Math.sqrt((n1.getNodeData().x() - n2.getNodeData().x()) * (n1.getNodeData().x() - n2.getNodeData().x())
+                + (n1.getNodeData().y() - n2.getNodeData().y()) * (n1.getNodeData().y() - n2.getNodeData().y()));
     }
 
 // <editor-fold defaultstate="collapsed" desc="Getters/Setters">
@@ -360,6 +414,9 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
                 break;
             case 4:
                 this.type = TYPE.uSF;
+                break;
+            case 5:
+                this.type = TYPE.SFE;
                 break;
         }
     }

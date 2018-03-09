@@ -41,6 +41,7 @@ public class SmallWorldGraphUIImpl implements SmallWorldGraphUI {
         panel.radioHK.setSelected(false);
         panel.radioTv.setSelected(false);
         panel.radioUSF.setSelected(false);
+        panel.radioSFE.setSelected(false);
 
         switch (swGraph.getType()) {
             case WS:
@@ -54,6 +55,9 @@ public class SmallWorldGraphUIImpl implements SmallWorldGraphUI {
                 break;
             case uSF:
                 panel.radioUSF.setSelected(true);
+                break;
+            case SFE:
+                panel.radioSFE.setSelected(true);
                 break;
         }
 
@@ -76,10 +80,11 @@ public class SmallWorldGraphUIImpl implements SmallWorldGraphUI {
             swGraph.setType(3);
         } else if (panel.radioUSF.isSelected()) {
             swGraph.setType(4);
+        } else if (panel.radioSFE.isSelected()) {
+            swGraph.setType(5);
         } else {
             swGraph.setType(1); // error ?
         }
-
 
         swGraph.setAnimate(panel.animateCheckBox.isSelected());
         swGraph.setAnimationNodeDelay(Integer.parseInt(panel.tAnimateNode.getText()));

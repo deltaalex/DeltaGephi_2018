@@ -74,6 +74,7 @@ public class SmallWorldGraphPanel extends javax.swing.JPanel {
         radioHK = new javax.swing.JRadioButton();
         radioTv = new javax.swing.JRadioButton();
         radioUSF = new javax.swing.JRadioButton();
+        radioSFE = new javax.swing.JRadioButton();
 
         nodeLabel.setText(org.openide.util.NbBundle.getMessage(SmallWorldGraphPanel.class, "SmallWorldGraphPanel.nodeLabel.text_2")); // NOI18N
 
@@ -142,6 +143,9 @@ public class SmallWorldGraphPanel extends javax.swing.JPanel {
         buttonGroup1.add(radioUSF);
         radioUSF.setText(org.openide.util.NbBundle.getMessage(SmallWorldGraphPanel.class, "SmallWorldGraphPanel.radioUSF.text")); // NOI18N
 
+        buttonGroup1.add(radioSFE);
+        radioSFE.setText(org.openide.util.NbBundle.getMessage(SmallWorldGraphPanel.class, "SmallWorldGraphPanel.radioSFE.text")); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -183,7 +187,8 @@ public class SmallWorldGraphPanel extends javax.swing.JPanel {
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(radioHK)
                                             .addComponent(radioTv)
-                                            .addComponent(radioUSF))))))
+                                            .addComponent(radioUSF)
+                                            .addComponent(radioSFE))))))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
@@ -198,18 +203,24 @@ public class SmallWorldGraphPanel extends javax.swing.JPanel {
                     .addComponent(nodeField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(nodeLabel)
                     .addComponent(radioWS))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(kField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(nodeLabel1)
                     .addComponent(radioHK))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(wiringField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(nodeLabel2)
-                    .addComponent(radioTv))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(radioUSF)
+                .addGap(1, 1, 1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(11, 11, 11)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(wiringField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(nodeLabel2)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(radioTv)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(radioUSF)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(radioSFE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 10, Short.MAX_VALUE)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 12, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
@@ -247,6 +258,7 @@ public class SmallWorldGraphPanel extends javax.swing.JPanel {
     private javax.swing.JLabel nodeLabel1;
     private javax.swing.JLabel nodeLabel2;
     protected javax.swing.JRadioButton radioHK;
+    protected javax.swing.JRadioButton radioSFE;
     protected javax.swing.JRadioButton radioTv;
     protected javax.swing.JRadioButton radioUSF;
     protected javax.swing.JRadioButton radioWS;
