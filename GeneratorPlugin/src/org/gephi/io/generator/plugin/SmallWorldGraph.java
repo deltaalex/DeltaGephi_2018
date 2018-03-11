@@ -24,9 +24,9 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service = Generator.class)
 public class SmallWorldGraph extends AbstractGraph implements Generator {
 
-    private int numberOfNodes = 320;
+    private int numberOfNodes = 1000;
     private int K = 5;
-    private double wiringProbability = 0.2;
+    private double wiringProbability = 0.33333; // 0.2
 
     public enum TYPE {
 
@@ -315,6 +315,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
     private void createSFEdgeNetwork(Cell cell, int N, GraphModel graphModel) {
         Random rand = new Random();
         Node n1, n2;
+        double gamma = 1 / wiringProbability;
 
         // K used as distance here!!!      
         // create the N nodes with spatial coordinates (0,K) x (0,K);
@@ -339,7 +340,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
                 n1 = cell.getNodes().get(i);
                 n2 = cell.getNodes().get(j);
                 // probability of edge(1,2) = 1/distance(1,2)
-                if (rand.nextDouble() < 1.0 / Math.pow(distanceXY(n1, n2), 2)) {
+                if (rand.nextDouble() < Math.pow(distanceXY(n1, n2), -gamma)) {
                     // create edge
                     Edge edge = graphModel.factory().newEdge(n1, n2);
                     graphModel.getGraph().addEdge(edge);
