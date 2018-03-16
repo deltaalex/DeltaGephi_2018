@@ -64,7 +64,7 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
         jXLabel7 = new org.jdesktop.swingx.JXLabel();
         radioEdgeCentrality = new javax.swing.JRadioButton();
         jXLabel8 = new org.jdesktop.swingx.JXLabel();
-        radioLeaderRankWithVisits = new javax.swing.JRadioButton();
+        radioCommLeaderRank = new javax.swing.JRadioButton();
         jXLabel9 = new org.jdesktop.swingx.JXLabel();
 
         directedButtonGroup.add(undirectedRadioButton);
@@ -128,8 +128,8 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
         jXLabel8.setText(org.openide.util.NbBundle.getMessage(InfluenceRankingsPanel.class, "InfluenceRankingsPanel.jXLabel8.text")); // NOI18N
         jXLabel8.setFont(jXLabel8.getFont().deriveFont(jXLabel8.getFont().getSize()-1f));
 
-        metricsGroup.add(radioLeaderRankWithVisits);
-        radioLeaderRankWithVisits.setText(org.openide.util.NbBundle.getMessage(InfluenceRankingsPanel.class, "InfluenceRankingsPanel.radioLeaderRankWithVisits.text")); // NOI18N
+        metricsGroup.add(radioCommLeaderRank);
+        radioCommLeaderRank.setText(org.openide.util.NbBundle.getMessage(InfluenceRankingsPanel.class, "InfluenceRankingsPanel.radioCommLeaderRank.text")); // NOI18N
 
         jXLabel9.setForeground(new java.awt.Color(102, 102, 102));
         jXLabel9.setLineWrap(true);
@@ -167,7 +167,7 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
                                 .addGroup(layout.createSequentialGroup()
                                     .addGap(21, 21, 21)
                                     .addComponent(jXLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addComponent(radioLeaderRankWithVisits))
+                                .addComponent(radioCommLeaderRank))
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                 .addGroup(layout.createSequentialGroup()
                                     .addGap(21, 21, 21)
@@ -209,7 +209,7 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jXLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(radioLeaderRankWithVisits)
+                .addComponent(radioCommLeaderRank)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jXLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 6, Short.MAX_VALUE)
@@ -241,10 +241,10 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
     private org.jdesktop.swingx.JXLabel jXLabel9;
     private javax.swing.ButtonGroup metricsGroup;
     protected javax.swing.JRadioButton radioClusterRank;
+    protected javax.swing.JRadioButton radioCommLeaderRank;
     protected javax.swing.JRadioButton radioEdgeCentrality;
     protected javax.swing.JRadioButton radioHirsch;
     protected javax.swing.JRadioButton radioLeaderRank;
-    protected javax.swing.JRadioButton radioLeaderRankWithVisits;
     protected javax.swing.JRadioButton radioLocalCentrality;
     protected javax.swing.JRadioButton undirectedRadioButton;
     // End of variables declaration//GEN-END:variables

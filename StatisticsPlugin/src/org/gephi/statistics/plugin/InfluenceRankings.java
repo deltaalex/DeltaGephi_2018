@@ -38,7 +38,7 @@ public class InfluenceRankings implements Statistics, LongTask {
     public static final String HINDEX = "HIndex";
     public static final String CLUSTERRANK = "ClusterRank";
     public static final String LEADERRANK = "LeaderRank";
-    public static final String LEADERRANKWITHVISITS = "LeaderRankWithVisits";
+    public static final String COMMUNITYLEADERRANK = "CommunityLeaderRank";
     public static final String LOCALCENTRALITY = "LocalCentrality";
     public static final String EDGECENTRALITY = "EdgeCentrality";
     /**
@@ -97,8 +97,8 @@ public class InfluenceRankings implements Statistics, LongTask {
             case EDGECENTRALITY:
                 runEdgeCentrality(hgraph, attributeModel);
                 break;
-            case LEADERRANKWITHVISITS:
-                runLeaderRankWithVisits(hgraph, attributeModel);
+            case COMMUNITYLEADERRANK:
+                runCommunityLeaderRank(hgraph, attributeModel);
                 break;
             default:
                 break;
@@ -306,10 +306,9 @@ public class InfluenceRankings implements Statistics, LongTask {
         }
     }
 
-    private void runLeaderRankWithVisits(HierarchicalGraph hgraph, AttributeModel attributeModel) {
+    private void runCommunityLeaderRank(HierarchicalGraph hgraph, AttributeModel attributeModel) {
         int N = hgraph.getNodeCount();
         Map<Node, Double> leaderRanks = new HashMap<Node, Double>();
-        Map<Node, Integer> visits = new HashMap<Node, Integer>();
 
         Progress.start(progress);
 
@@ -322,16 +321,16 @@ public class InfluenceRankings implements Statistics, LongTask {
 
         // create LR column table
         AttributeTable nodeTable = attributeModel.getNodeTable();
-        AttributeColumn leaderRanksCol = nodeTable.getColumn(LEADERRANKWITHVISITS);
-        if (leaderRanksCol == null) {
-            leaderRanksCol = nodeTable.addColumn(LEADERRANKWITHVISITS, LEADERRANKWITHVISITS, AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0));
+        AttributeColumn communityRanksCol = nodeTable.getColumn(COMMUNITYLEADERRANK);
+        if (communityRanksCol == null) {
+            communityRanksCol = nodeTable.addColumn(COMMUNITYLEADERRANK, COMMUNITYLEADERRANK, AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0));
         }
 
         // 1: init all nodes with score=1; ground=0
         for (Node node : hgraph.getNodes()) {
-            setAttribute(node, leaderRanksCol, 1.0);
+            setAttribute(node, communityRanksCol, 1.0);
         }
-        setAttribute(groundNode, leaderRanksCol, 0.0);
+        setAttribute(groundNode, communityRanksCol, 0.0);
         int count = 1000;
         boolean done;
 
@@ -341,16 +340,14 @@ public class InfluenceRankings implements Statistics, LongTask {
 
             // copy leaderranks to temp map            
             for (Node node : hgraph.getNodes()) {
-                leaderRanks.put(node, (Double) getAttribute(node, LEADERRANKWITHVISITS));
-                visits.put(node, 0);
+                leaderRanks.put(node, (Double) getAttribute(node, COMMUNITYLEADERRANK));
             }
-            leaderRanks.put(groundNode, (Double) getAttribute(groundNode, LEADERRANKWITHVISITS));
-            visits.put(groundNode, 0);
+            leaderRanks.put(groundNode, (Double) getAttribute(groundNode, COMMUNITYLEADERRANK));
 
             // repeat for whole graph (except ground node)
             for (Node node : hgraph.getNodes()) {
                 // current node's original (t-1) leaderrank
-                double leaderRank = (Double) getAttribute(node, LEADERRANKWITHVISITS);
+                double leaderRank = (Double) getAttribute(node, COMMUNITYLEADERRANK);
 
                 // quanta to share; +1 comes from ground node; else case is implicit /=1;
                 if (isDirected) {
@@ -363,39 +360,32 @@ public class InfluenceRankings implements Statistics, LongTask {
                     }
                 }
 
-                // add quanta to neighbors normalized by /[log(visits+1)+1]
+                // add quanta to neighbors
                 for (Node neighbour : hgraph.getNeighbors(node)) {
                     // get neighbour's updated leaderrank
                     double neighbourLR = leaderRanks.get(neighbour);
-                    // get neighbour's number of visits
-                    int visitCount = visits.get(neighbour);
-                    // update neighbour's leaderrank in temp and visits
-                    leaderRanks.put(neighbour, neighbourLR + leaderRank / (Math.log(visitCount + 1) + 1.0));
-                    visits.put(neighbour, visitCount + 1);
+                    // update neighbour's leaderrank in temp
+                    leaderRanks.put(neighbour, neighbourLR + leaderRank);
                 }
 
                 // give quanta to ground node as well; temp map
                 double groundLR = leaderRanks.get(groundNode);
-                int groundVisitCount = visits.get(groundNode);
-                leaderRanks.put(groundNode, groundLR + leaderRank / (Math.log(groundVisitCount + 1) + 1.0));
-                visits.put(groundNode, groundVisitCount + 1);
+                leaderRanks.put(groundNode, groundLR + leaderRank);
             }
 
             // make ground node also share his original swag (t-1) with everyone
-            double groundLR = (Double) getAttribute(groundNode, LEADERRANKWITHVISITS);
+            double groundLR = (Double) getAttribute(groundNode, COMMUNITYLEADERRANK);
             groundLR /= N;
 
             for (Node node : hgraph.getNodes()) {
                 // work with temp map
                 double nodeLR = leaderRanks.get(node);
-                int visitCount = visits.get(node);
-                leaderRanks.put(node, nodeLR + groundLR / (Math.log(visitCount + 1) + 1.0));
-                //visits.put(node, visitCount + 1); // irrelevant
+                leaderRanks.put(node, nodeLR + groundLR);
             }
 
             // check convergence/ stop constition
             for (Node node : hgraph.getNodes()) {
-                if ((leaderRanks.get(node) - 2 * (Double) getAttribute(node, LEADERRANKWITHVISITS)) / (Double) getAttribute(node, LEADERRANKWITHVISITS) >= 0.01) {
+                if ((leaderRanks.get(node) - 2 * (Double) getAttribute(node, COMMUNITYLEADERRANK)) / (Double) getAttribute(node, COMMUNITYLEADERRANK) >= 0.01) {
                     done = false;
                 }
             }
@@ -403,10 +393,10 @@ public class InfluenceRankings implements Statistics, LongTask {
             // update leaderanks of all nodes; temp -> original (t)
             // !!! subtract original score from current one!
             for (Node node : hgraph.getNodes()) {
-                setAttribute(node, leaderRanksCol, leaderRanks.get(node) - (Double) getAttribute(node, LEADERRANKWITHVISITS));
+                setAttribute(node, communityRanksCol, leaderRanks.get(node) - (Double) getAttribute(node, COMMUNITYLEADERRANK));
             }
             // !!! subtract original score from ground node!
-            setAttribute(groundNode, leaderRanksCol, leaderRanks.get(groundNode) - (Double) getAttribute(groundNode, LEADERRANKWITHVISITS));
+            setAttribute(groundNode, communityRanksCol, leaderRanks.get(groundNode) - (Double) getAttribute(groundNode, COMMUNITYLEADERRANK));
 
             if (done || isCanceled) {
                 hgraph.readUnlockAll();
@@ -415,9 +405,46 @@ public class InfluenceRankings implements Statistics, LongTask {
         }
 
         // at the end, evenly distribute ground node's LR to everyone else
-        double remainingLR = (Double) getAttribute(groundNode, LEADERRANKWITHVISITS) / N;
+        double remainingLR = (Double) getAttribute(groundNode, COMMUNITYLEADERRANK) / N;
         for (Node node : hgraph.getNodes()) {
-            setAttribute(node, leaderRanksCol, (Double) getAttribute(node, LEADERRANKWITHVISITS) + remainingLR);
+            setAttribute(node, communityRanksCol, (Double) getAttribute(node, COMMUNITYLEADERRANK) + remainingLR);
+        }
+
+        //////////////////////////
+        // Community normalization
+        //////////////////////////
+
+        // run modularity algorithm
+        Modularity modularityAlgo = new Modularity();
+        modularityAlgo.setResolution(1.0);
+        modularityAlgo.setRandom(true);
+        modularityAlgo.setUseWeight(true);
+        modularityAlgo.setProgressTicket(progress);
+        modularityAlgo.execute(hgraph.getGraphModel(), attributeModel);
+        List<Modularity.Community> communities = modularityAlgo.getCommunities();
+
+        // measure community sizes
+        int communitySize[] = new int[communities.size()];
+        for (int i = 0; i < communitySize.length; ++i) {
+            communitySize[i] = 0;
+        }
+
+        for (Node node : hgraph.getNodes()) {
+            communitySize[(Integer) getAttribute(node, Modularity.MODULARITY_CLASS)]++;
+        }
+
+        // apply community sizes normalization
+        Integer comId;
+        Double nodeLR;
+        for (Node node : hgraph.getNodes()) {
+            // retrieve community of node
+            comId = (Integer) getAttribute(node, Modularity.MODULARITY_CLASS);
+            // retrieve LR of node
+            nodeLR = (Double) getAttribute(node, COMMUNITYLEADERRANK);
+            // normalize
+            nodeLR /= communitySize[comId];
+            // save updated leaderrank
+            setAttribute(node, communityRanksCol, nodeLR);
         }
     }
 
