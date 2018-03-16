@@ -204,7 +204,7 @@ public class NetworkRobustness implements Statistics, LongTask {
                     }
                 }
 
-                // 3) measure impact: GC, nr components
+                // )3 measure impact: GC, nr components
 
                 // run CC on graph
                 ConnectedComponents components = runConnectedComponents(graph, attributeModel);

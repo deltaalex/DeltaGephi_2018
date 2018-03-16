@@ -38,6 +38,9 @@ public class InfluenceRankingsUI implements StatisticsUI {
                 case LOCALCENTRALITY:
                     panel.radioLocalCentrality.setSelected(true);
                     break;
+                case LEADERRANKWITHVISITS:
+                    panel.radioLeaderRankWithVisits.setSelected(true);
+                    break;
             }
 
             panel.setDirected(infRank.getDirected());
@@ -55,6 +58,8 @@ public class InfluenceRankingsUI implements StatisticsUI {
                 infRank.setSelectedMetric(InfluenceMetricEnum.CLUSTERRANK);
             } else if (panel.radioLocalCentrality.isSelected()) {
                 infRank.setSelectedMetric(InfluenceMetricEnum.LOCALCENTRALITY);
+            } else if (panel.radioLeaderRankWithVisits.isSelected()) {
+                infRank.setSelectedMetric(InfluenceMetricEnum.LEADERRANKWITHVISITS);
             }
 
             infRank.setDirected(panel.isDirected());

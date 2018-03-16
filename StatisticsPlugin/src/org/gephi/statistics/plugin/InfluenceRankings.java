@@ -38,6 +38,7 @@ public class InfluenceRankings implements Statistics, LongTask {
     public static final String HINDEX = "HIndex";
     public static final String CLUSTERRANK = "ClusterRank";
     public static final String LEADERRANK = "LeaderRank";
+    public static final String LEADERRANKWITHVISITS = "LeaderRankWithVisits";
     public static final String LOCALCENTRALITY = "LocalCentrality";
     public static final String EDGECENTRALITY = "EdgeCentrality";
     /**
@@ -95,6 +96,9 @@ public class InfluenceRankings implements Statistics, LongTask {
                 break;
             case EDGECENTRALITY:
                 runEdgeCentrality(hgraph, attributeModel);
+                break;
+            case LEADERRANKWITHVISITS:
+                runLeaderRankWithVisits(hgraph, attributeModel);
                 break;
             default:
                 break;
@@ -225,7 +229,7 @@ public class InfluenceRankings implements Statistics, LongTask {
         int count = 1000;
         boolean done;
 
-        // 2: iterate by redistributing the socre evenly to all neighbours, i.e. give my score / number of neighbors to everone around
+        // 2: iterate by redistributing the score evenly to all neighbours, i.e. give my score / number of neighbors to everone around
         while (count-- > 0) {
             done = true;
 
@@ -299,6 +303,121 @@ public class InfluenceRankings implements Statistics, LongTask {
         double remainingLR = (Double) getAttribute(groundNode, LEADERRANK) / N;
         for (Node node : hgraph.getNodes()) {
             setAttribute(node, leaderRanksCol, (Double) getAttribute(node, LEADERRANK) + remainingLR);
+        }
+    }
+
+    private void runLeaderRankWithVisits(HierarchicalGraph hgraph, AttributeModel attributeModel) {
+        int N = hgraph.getNodeCount();
+        Map<Node, Double> leaderRanks = new HashMap<Node, Double>();
+        Map<Node, Integer> visits = new HashMap<Node, Integer>();
+
+        Progress.start(progress);
+
+        // create ground node (but don't add to graph)
+        Node groundNode = hgraph.getGraphModel().factory().newNode();
+        // initialize ground node
+        //groundNode.getNodeData().setSize(5f);
+        //groundNode.getNodeData().setLabel("Ground node");
+        //hgraph.getGraphModel().getGraph().addNode(groundNode);
+
+        // create LR column table
+        AttributeTable nodeTable = attributeModel.getNodeTable();
+        AttributeColumn leaderRanksCol = nodeTable.getColumn(LEADERRANKWITHVISITS);
+        if (leaderRanksCol == null) {
+            leaderRanksCol = nodeTable.addColumn(LEADERRANKWITHVISITS, LEADERRANKWITHVISITS, AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0));
+        }
+
+        // 1: init all nodes with score=1; ground=0
+        for (Node node : hgraph.getNodes()) {
+            setAttribute(node, leaderRanksCol, 1.0);
+        }
+        setAttribute(groundNode, leaderRanksCol, 0.0);
+        int count = 1000;
+        boolean done;
+
+        // 2: iterate by redistributing the score evenly to all neighbours, i.e. give my score / number of neighbors to everone around
+        while (count-- > 0) {
+            done = true;
+
+            // copy leaderranks to temp map            
+            for (Node node : hgraph.getNodes()) {
+                leaderRanks.put(node, (Double) getAttribute(node, LEADERRANKWITHVISITS));
+                visits.put(node, 0);
+            }
+            leaderRanks.put(groundNode, (Double) getAttribute(groundNode, LEADERRANKWITHVISITS));
+            visits.put(groundNode, 0);
+
+            // repeat for whole graph (except ground node)
+            for (Node node : hgraph.getNodes()) {
+                // current node's original (t-1) leaderrank
+                double leaderRank = (Double) getAttribute(node, LEADERRANKWITHVISITS);
+
+                // quanta to share; +1 comes from ground node; else case is implicit /=1;
+                if (isDirected) {
+                    if (((HierarchicalDirectedGraph) hgraph).getTotalOutDegree(node) > 0) {
+                        leaderRank /= (((HierarchicalDirectedGraph) hgraph).getTotalOutDegree(node) + 1);
+                    }
+                } else {
+                    if (hgraph.getTotalDegree(node) > 0) {
+                        leaderRank /= (hgraph.getTotalDegree(node) + 1);
+                    }
+                }
+
+                // add quanta to neighbors normalized by /[log(visits+1)+1]
+                for (Node neighbour : hgraph.getNeighbors(node)) {
+                    // get neighbour's updated leaderrank
+                    double neighbourLR = leaderRanks.get(neighbour);
+                    // get neighbour's number of visits
+                    int visitCount = visits.get(neighbour);
+                    // update neighbour's leaderrank in temp and visits
+                    leaderRanks.put(neighbour, neighbourLR + leaderRank / (Math.log(visitCount + 1) + 1.0));
+                    visits.put(neighbour, visitCount + 1);
+                }
+
+                // give quanta to ground node as well; temp map
+                double groundLR = leaderRanks.get(groundNode);
+                int groundVisitCount = visits.get(groundNode);
+                leaderRanks.put(groundNode, groundLR + leaderRank / (Math.log(groundVisitCount + 1) + 1.0));
+                visits.put(groundNode, groundVisitCount + 1);
+            }
+
+            // make ground node also share his original swag (t-1) with everyone
+            double groundLR = (Double) getAttribute(groundNode, LEADERRANKWITHVISITS);
+            groundLR /= N;
+
+            for (Node node : hgraph.getNodes()) {
+                // work with temp map
+                double nodeLR = leaderRanks.get(node);
+                int visitCount = visits.get(node);
+                leaderRanks.put(node, nodeLR + groundLR / (Math.log(visitCount + 1) + 1.0));
+                //visits.put(node, visitCount + 1); // irrelevant
+            }
+
+            // check convergence/ stop constition
+            for (Node node : hgraph.getNodes()) {
+                if ((leaderRanks.get(node) - 2 * (Double) getAttribute(node, LEADERRANKWITHVISITS)) / (Double) getAttribute(node, LEADERRANKWITHVISITS) >= 0.01) {
+                    done = false;
+                }
+            }
+
+            // update leaderanks of all nodes; temp -> original (t)
+            // !!! subtract original score from current one!
+            for (Node node : hgraph.getNodes()) {
+                setAttribute(node, leaderRanksCol, leaderRanks.get(node) - (Double) getAttribute(node, LEADERRANKWITHVISITS));
+            }
+            // !!! subtract original score from ground node!
+            setAttribute(groundNode, leaderRanksCol, leaderRanks.get(groundNode) - (Double) getAttribute(groundNode, LEADERRANKWITHVISITS));
+
+            if (done || isCanceled) {
+                hgraph.readUnlockAll();
+                break;
+            }
+        }
+
+        // at the end, evenly distribute ground node's LR to everyone else
+        double remainingLR = (Double) getAttribute(groundNode, LEADERRANKWITHVISITS) / N;
+        for (Node node : hgraph.getNodes()) {
+            setAttribute(node, leaderRanksCol, (Double) getAttribute(node, LEADERRANKWITHVISITS) + remainingLR);
         }
     }
 
