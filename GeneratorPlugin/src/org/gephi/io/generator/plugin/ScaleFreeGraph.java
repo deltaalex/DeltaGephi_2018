@@ -25,10 +25,11 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service = Generator.class)
 public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
-    protected int numberOfNodes = 320;
+    protected int numberOfNodes = 1000;
     protected Metric[] metrics = {Metric.Degree};
-    protected int randomGraphSize = 20;
+    protected int randomGraphSize = 200;
     protected double pRandomWiring = 0.1;
+    protected double targetDegree = 6.241;
     protected boolean directed = false;
     protected boolean weighted = false;
     protected boolean powerLawWeights = false;
@@ -55,97 +56,314 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
         progress.switchToIndeterminate();
 
         if (DEBUG_GENERATION) {
+            //metrics = new Metric[]{Metric.Eigenvector};
 
-            for (int i = randomGraphSize; i < numberOfNodes; ++i) {
-                // node 'i' to be linked to one existing node
-                Node newNode = null;
-                // total fitness in graph
-                int totalDegree = 0;
-                for (Node node : nodeArray) {
-                    totalDegree += graph.getDegree(node);
-                }
 
-                boolean success = false;
-                for (Node node : nodeArray) {
-                    double p = random.nextDouble();
-                    // try to connect to each node with probability 'p'
-                    if (p < 1.0 * graph.getDegree(node) / totalDegree) {
-                        if (newNode == null) {
-                            newNode = createNode(graphModel, i, true);
-                            success = true;
-                        }
-                        createAddDirectedEdge(graphModel, newNode, node);
-                        createAddDirectedEdge(graphModel, node, newNode);
+
+            if (metrics[0].equals(Metric.Degree)) {
+                /**
+                 * DEGREE PREFERENTIAL ATTACHMENT
+                 */
+                for (int i = randomGraphSize; i < numberOfNodes; ++i) {
+                    // node 'i' to be linked to one existing node
+                    Node newNode = null;
+                    // total fitness in graph
+                    int totalDegree = 0;
+                    for (Node node : nodeArray) {
+                        totalDegree += graph.getDegree(node);
                     }
+
+                    boolean success = false;
+                    boolean enoughDegree = false;
+                    //while (!enoughDegree) {
+                        for (Node node : nodeArray) {
+                            double p = random.nextDouble();
+                            // try to connect to each node with probability 'p'
+                            if (p < 1.0 * graph.getDegree(node) / totalDegree) {
+                                if (newNode == null) {
+                                    newNode = createNode(graphModel, i, true);
+                                    success = true;
+                                }
+                                createAddDirectedEdge(graphModel, newNode, node);
+                                createAddDirectedEdge(graphModel, node, newNode);
+                                enoughDegree = graph.getDegree(newNode) >= targetDegree;
+                            }
+
+                            if (enoughDegree) {
+                                break;
+                            }
+                        }
+                        if (success) {
+                            nodeArray.add(newNode);
+                            success = false;
+                        }
+                    //}
                 }
-                if (success) {
-                    nodeArray.add(newNode);
-                } else {
-                    i--;
+            } /**
+             * BETWEENNESS PREFERENTIAL ATTACHMENT
+             */
+            else if (metrics[0].equals(Metric.Betweenness)) {
+                for (int i = randomGraphSize; i < numberOfNodes; ++i) {
+                    // node 'i' to be linked to one existing node
+                    Node newNode = null;
+                    // save time, compute fitness only after adding 10 new nodes
+                    if (i % 10 == 0) {
+                        computeMetricOnGraph(graphModel, metrics);
+                    }
+                    // total fitness in graph                
+                    double totalBtw = 0.0;
+                    for (Node node : nodeArray) {
+                        if (node.getAttributes().getValue(GraphDistance.BETWEENNESS) != null) {
+                            totalBtw += (Double) node.getAttributes().getValue(GraphDistance.BETWEENNESS);
+                        }
+                    }
+
+                    boolean success = false;
+                    boolean enoughDegree = false;
+                    //while (!enoughDegree) {
+                        for (Node node : nodeArray) {
+                            double p = random.nextDouble();
+                            // try to connect to each node with probability 'p'
+                            if (node.getAttributes().getValue(GraphDistance.BETWEENNESS) == null) {
+                                continue;
+                            }
+
+                            if (p < (Double) node.getAttributes().getValue(GraphDistance.BETWEENNESS) / totalBtw) {
+                                if (newNode == null) {
+                                    newNode = createNode(graphModel, i, true);
+                                    success = true;
+                                }
+                                createAddDirectedEdge(graphModel, newNode, node);
+                                createAddDirectedEdge(graphModel, node, newNode);
+                                enoughDegree = graph.getDegree(newNode) >= targetDegree;
+                            }
+
+                            if (enoughDegree) {
+                                break;
+                            }
+                        }
+                        if (success) {
+                            nodeArray.add(newNode);
+                            success = false;
+                        }
+                    //}
+                }
+            } /**
+             * EIGENVECTOR PREFERENTIAL ATTACHMENT
+             */
+            else if (metrics[0].equals(Metric.Eigenvector)) {
+                for (int i = randomGraphSize; i < numberOfNodes; ++i) {
+                    // node 'i' to be linked to one existing node
+                    Node newNode = null;
+                    // save time, compute fitness only after adding 10 new nodes
+                    if (i % 5 == 0) {
+                        computeMetricOnGraph(graphModel, metrics);
+                    }
+                    // total fitness in graph                
+                    double totalEigen = 0.0;
+                    for (Node node : nodeArray) {
+                        totalEigen += (Double) node.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR);
+                    }
+
+                    boolean success = false;
+                    boolean enoughDegree = false;
+                    //while (!enoughDegree) {
+                        for (Node node : nodeArray) {
+                            double p = random.nextDouble();
+                            // try to connect to each node with probability 'p'
+                            if (p < (Double) node.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR) / totalEigen) {
+                                if (newNode == null) {
+                                    newNode = createNode(graphModel, i, true);
+                                    success = true;
+                                }
+                                createAddDirectedEdge(graphModel, newNode, node);
+                                createAddDirectedEdge(graphModel, node, newNode);
+                                enoughDegree = graph.getDegree(newNode) >= targetDegree;
+                            }
+
+                            if (enoughDegree) {
+                                break;
+                            }
+                        }
+                        if (success) {
+                            nodeArray.add(newNode);
+                            success = false;
+                        }
+                    //}
+                }
+            } /**
+             * CLOSENESS PREFERENTIAL ATTACHMENT
+             */
+            else if (metrics[0].equals(Metric.Closeness)) {
+                for (int i = randomGraphSize; i < numberOfNodes; ++i) {
+                    // node 'i' to be linked to one existing node
+                    Node newNode = null;
+                    // save time, compute fitness only after adding 10 new nodes
+                    if (i % 10 == 0) {
+                        computeMetricOnGraph(graphModel, metrics);
+                    }
+                    // total fitness in graph                
+                    double totalCls = 0.0;
+                    for (Node node : nodeArray) {
+                        if (node.getAttributes().getValue(GraphDistance.CLOSENESS) != null) {
+                            totalCls += (Double) node.getAttributes().getValue(GraphDistance.CLOSENESS);
+                        }
+                    }
+
+                    boolean success = false;
+                    boolean enoughDegree = false;
+                    //while (!enoughDegree) {
+                        for (Node node : nodeArray) {
+                            double p = random.nextDouble();
+                            // try to connect to each node with probability 'p'
+                            if (node.getAttributes().getValue(GraphDistance.CLOSENESS) == null) {
+                                continue;
+                            }
+
+                            if (p < (Double) node.getAttributes().getValue(GraphDistance.CLOSENESS) / totalCls) {
+                                if (newNode == null) {
+                                    newNode = createNode(graphModel, i, true);
+                                    success = true;
+                                }
+                                createAddDirectedEdge(graphModel, newNode, node);
+                                createAddDirectedEdge(graphModel, node, newNode);
+                                enoughDegree = graph.getDegree(newNode) >= targetDegree;
+                            }
+
+                            if (enoughDegree) {
+                                break;
+                            }
+                        }
+                        if (success) {
+                            nodeArray.add(newNode);
+                            success = false;
+                        }
+                    //}
+                }
+            } /**
+             * CLUSTERING PREFERENTIAL ATTACHMENT
+             */
+            else if (metrics[0].equals(Metric.Clustering)) {
+                for (int i = randomGraphSize; i < numberOfNodes; ++i) {
+                    // node 'i' to be linked to one existing node
+                    Node newNode = null;
+                    // save time, compute fitness only after adding 10 new nodes
+                    if (i % 10 == 0) {
+                        computeMetricOnGraph(graphModel, metrics);
+                    }
+                    // total fitness in graph                
+                    double totalClustering = 0.0;
+                    for (Node node : nodeArray) {
+                        totalClustering += (Double) node.getAttributes().getValue(ClusteringCoefficient.CLUSTERING_COEFF);
+                    }
+
+                    boolean success = false;
+                    boolean enoughDegree = false;
+                    //while (!enoughDegree) {
+                        for (Node node : nodeArray) {
+                            double p = random.nextDouble();
+                            // try to connect to each node with probability 'p'
+                            if (p < (Double) node.getAttributes().getValue(ClusteringCoefficient.CLUSTERING_COEFF) / totalClustering) {
+                                if (newNode == null) {
+                                    newNode = createNode(graphModel, i, true);
+                                    success = true;
+                                }
+                                createAddDirectedEdge(graphModel, newNode, node);
+                                createAddDirectedEdge(graphModel, node, newNode);
+                                enoughDegree = graph.getDegree(newNode) >= targetDegree;
+                            }
+
+                            if (enoughDegree) {
+                                break;
+                            }
+                        }
+                        if (success) {
+                            nodeArray.add(newNode);
+                            success = false;
+                        }
+                    //}
                 }
             }
-
             progress.switchToDeterminate(100);
-        } else {
+        } // <editor-fold defaultstate="collapsed" desc="Code that sucks">         
+        else {
+            double[] sumpk = null;
 
             // initialize other nodes and edges
-            for (int i = randomGraphSize; i < numberOfNodes; ++i) {
-
-                // create node
-                Node newNode = createNode(graphModel, i, true);
+            for (int i = randomGraphSize; i < 2 * numberOfNodes && nodeArray.size() < numberOfNodes; ++i) {
+                Node newNode = null;
 
                 /**
                  * Define optimization metric(s)
                  */
-                double[] sumpk = getMetricsFromGraph(graphModel, metrics);
+                if (i % 10 == 0) {
+                    sumpk = getMetricsFromGraph(graphModel, metrics);
+                }
 
                 boolean success = false;
-                while (!success) {
+                //while (!success) {
 
-                    // try to connect the new node to nodes in the network
-                    for (Node node : nodeArray) {
+                // try to connect the new node to nodes in the network
+                for (Node node : nodeArray) {
 
-                        double[] pi = new double[metrics.length];
-                        // metric of current sfNode
-                        for (int m = 0; m < metrics.length; ++m) {
-                            pi[m] = getNodeMetric(graph, node, metrics[m]);
-                        }
+                    double[] pi = new double[metrics.length];
+                    // metric of current sfNode
+                    for (int m = 0; m < metrics.length; ++m) {
+                        pi[m] = getNodeMetric(graph, node, metrics[m]);
+                    }
 
-                        // get random value
-                        double p = random.nextDouble();
-                        // weight of each metric
-                        double w = 1.0 / metrics.length;
+                    // get random value
+                    double p = random.nextDouble();
+                    // weight of each metric
+                    double w = 1.0 / metrics.length;
 
-                        double fitness = 0.0;
-                        for (int m = 0; m < metrics.length; ++m) {
-                            fitness += w * pi[m] / sumpk[m];
-                        }
+                    double fitness = 0.0;
+                    for (int m = 0; m < metrics.length; ++m) {
+                        fitness += w * pi[m] / sumpk[m];
+                    }
 
-                        // connect if p < probability
-                        if (p < fitness) {
-                            Edge edge = createAddDirectedEdge(graphModel, newNode, node);
-                            if (weighted) {
-                                double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
-                                edge.setWeight((float) weight);
-                            }
-                            edge = createAddDirectedEdge(graphModel, node, newNode);
-                            if (weighted) {
-                                double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
-                                edge.setWeight((float) weight);
-                            }
-
+                    // connect if p < probability
+                    if (p < fitness) {
+                        // add new node to graph only when it recieves >=1 edge
+                        if (newNode == null) {
+                            newNode = createNode(graphModel, i, true);
                             success = true;
                         }
+
+                        if (weighted) {
+                            double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
+                            Edge edge = createAddDirectedEdge(graphModel, newNode, node);
+                            edge.setWeight((float) weight);
+                        } else {
+                            createAddDirectedEdge(graphModel, newNode, node);
+                        }
+
+                        if (weighted) {
+                            double weight = powerLawWeights ? getPowerDistributedDoubleValue(random, 0, 1) : random.nextFloat();
+                            Edge edge = createAddDirectedEdge(graphModel, node, newNode);
+                            edge.setWeight((float) weight);
+                        } else {
+                            createAddDirectedEdge(graphModel, node, newNode);
+                        }
+
+                        //success = true;
                     }
                 }
-                nodeArray.add(newNode);
+                //}
+                if (success) {
+                    nodeArray.add(newNode);
+                }
 
-                progressTick();
+                //progressTick();
+            }
+            if (1 == 1) {
+                progress.switchToDeterminate(100);
+                return;
             }
 
             // add edges to graph until desired average degree is reached
             final int averageDegree = 10;
-            simulateGrowth = true;
+            simulateGrowth = false;
             if (simulateGrowth && weighted) {
                 // 1. for eeach node, add (averageDegree - degree) new edges
                 for (Node node : nodeArray) {
@@ -159,7 +377,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
                     int newEdges = Math.max(averageDegree - graph.getDegree(node), 0);
 
                     // re-compute metrics on graph
-                    double[] sumpk = getMetricsFromGraph(graphModel, metrics);
+                    double[] sumPk = getMetricsFromGraph(graphModel, metrics);
 
                     // 2. add edge by choosing the best unlinked fitting friend of a neighbor
                     boolean tryConnect = true;
@@ -193,7 +411,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
                                 double fitness = 0.0;
                                 for (int m = 0; m < metrics.length; ++m) {
-                                    fitness += w * pi[m] / sumpk[m];
+                                    fitness += w * pi[m] / sumPk[m];
                                 }
 
                                 // set weight proportional to fitness                            
@@ -255,8 +473,8 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
                     // add nodes
                     for (int i = 0; i < nodeArray.size(); ++i) {
                         // create node
-                        Node newNode = createNode(graphModel, c * numberOfNodes + i, true);
-                        clusters[c][i] = newNode;
+                        Node aNewNode = createNode(graphModel, c * numberOfNodes + i, true);
+                        clusters[c][i] = aNewNode;
                     }
 
                     // copy edges            
@@ -274,11 +492,11 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
                 // connect clusters                        
                 // compute sum of all metrics in network
-                double[] sumpk = new double[metrics.length];
+                double[] sumPk = new double[metrics.length];
                 for (int m = 0; m < metrics.length; ++m) {
-                    sumpk[m] = 0.0;
+                    sumPk[m] = 0.0;
                     for (Node node : graphModel.getGraph().getNodes()) {
-                        sumpk[m] += getNodeMetric(graphModel.getGraph(), node, metrics[m]);
+                        sumPk[m] += getNodeMetric(graphModel.getGraph(), node, metrics[m]);
                     }
                 }
 
@@ -300,7 +518,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
                             double fitness = 0.0;
                             for (int m = 0; m < metrics.length; ++m) {
-                                fitness += w * pi[m] / sumpk[m];
+                                fitness += w * pi[m] / sumPk[m];
                             }
 
                             // connect if p < probability
@@ -326,7 +544,9 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
             nodeArray = null;
             progress.switchToDeterminate(100);
+            progress.finish();
         }
+        // </editor-fold> 
     }
 
     protected final double[] getMetricsFromGraph(GraphModel graphModel, Metric[] metrics) {
@@ -351,7 +571,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
         for (Metric metric : metrics) {
 
             if (metric.equals(Metric.Degree)) {
-                continue;
+                return;
 
             } else if (metric.equals(Metric.Betweenness)) {
                 GraphDistance statistic = new GraphDistance();
@@ -361,8 +581,9 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
                 AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
                 statistic.execute(graphModel, attributeModel);
                 statistic.getDiameter();
+                return;
 
-            } else if (metric.equals(Metric.Centrality)) {
+            } else if (metric.equals(Metric.Eigenvector)) {
                 EigenvectorCentrality statistic = new EigenvectorCentrality();
                 statistic.setNumRuns(100);
                 statistic.setDirected(directed);
@@ -370,6 +591,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
                 AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
                 statistic.execute(graphModel, attributeModel);
                 statistic.getNumRuns();
+                return;
 
             } else if (metric.equals(Metric.Closeness)) {
                 GraphDistance statistic = new GraphDistance();
@@ -379,6 +601,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
                 AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
                 statistic.execute(graphModel, attributeModel);
                 statistic.getDiameter();
+                return;
 
             } else if (metric.equals(Metric.Clustering)) {
                 ClusteringCoefficient statistic = new ClusteringCoefficient();
@@ -387,6 +610,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
                 AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
                 statistic.execute(graphModel, attributeModel);
                 statistic.getAverageClusteringCoefficient();
+                return;
 
             } else if (metric.equals(Metric.APL)) {
                 GraphDistance statistic = new GraphDistance();
@@ -396,6 +620,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
                 AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
                 statistic.execute(graphModel, attributeModel);
                 statistic.getPathLength();
+                return;
 
             } else if (metric.equals(Metric.Modularity)) {
                 Modularity statistic = new Modularity();
@@ -406,6 +631,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
                 AttributeModel attributeModel = Lookup.getDefault().lookup(AttributeController.class).getModel();
                 statistic.execute(graphModel, attributeModel);
                 statistic.getModularity();
+                return;
 
             } else {
                 throw new IllegalArgumentException("Metric not supported: " + metric.toString());
@@ -422,7 +648,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
             Double x = (Double) node.getAttributes().getValue(GraphDistance.BETWEENNESS);
             return x == 0 ? 0.0 : x;
 
-        } else if (metric.equals(Metric.Centrality)) {
+        } else if (metric.equals(Metric.Eigenvector)) {
             return (Double) node.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR);
 
         } else if (metric.equals(Metric.Closeness)) {
@@ -448,7 +674,7 @@ public class ScaleFreeGraph extends AbstractGraph implements Generator {
 
     public enum Metric {
 
-        Degree, Betweenness, Closeness, Centrality, Clustering, APL, Modularity;
+        Degree, Betweenness, Closeness, Eigenvector, Clustering, APL, Modularity;
     }
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">

@@ -24,7 +24,6 @@ import org.gephi.statistics.spi.Statistics;
 import org.gephi.utils.longtask.spi.LongTask;
 import org.gephi.utils.progress.Progress;
 import org.gephi.utils.progress.ProgressTicket;
-import org.junit.Ignore;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 
@@ -60,7 +59,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE_COMPETE;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR;
     /**
      * Stop condition for diffusion processes
      */
@@ -159,7 +158,13 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     // <editor-fold defaultstate="collapsed" desc="Execution">
     public void execute(GraphModel graphModel, AttributeModel attributeModel) {
         HierarchicalGraph graph = graphModel.getHierarchicalGraphVisible();
-        execute(graph, attributeModel);
+
+        //final int REPEAT = 10;
+        //for (int i = 0; i < REPEAT; ++i) { // dbg: repeat and average iterations and coverage
+            execute(graph, attributeModel);
+          //  errorReport = "Average coverage: " + 1f * _coverage / REPEAT;
+          //  errorReport += "\nAverage time: " + 1f * _iterations / REPEAT;
+        //}
     }
 
     public void execute(HierarchicalGraph graph, AttributeModel attributeModel) {
@@ -242,7 +247,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             File tmp = new File(System.getProperty("user.home") + "/Desktop/tolerance_benchmark.txt");
             PrintWriter pw = new PrintWriter(tmp);
 
-            /*switch (diffusionAlgorithm) {
+            switch (diffusionAlgorithm) {
                 case SIR:
                     runSIR(graph, nodes, infectiousList, sirCol, deltaCol);
                     break;
@@ -255,7 +260,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 case TOLERANCE_COMPETE:
                     runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
                     break;
-            }*/
+            }
 
             /*pw.println("Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)");
              pw.println("Ended after " + iteration + " iterations.");
@@ -275,46 +280,49 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 //                pw.println(inf.getId());
 //            }
 
-            BenchmarkCentrality[] centralities = {BenchmarkCentrality.DEGREE, BenchmarkCentrality.CLOSENESS, BenchmarkCentrality.BETWEENNESS, BenchmarkCentrality.HITS, BenchmarkCentrality.PAGERANK, BenchmarkCentrality.HINDEX, BenchmarkCentrality.LEADERRANK, BenchmarkCentrality.CLUSTERRANK, BenchmarkCentrality.LOCALCENTRALITY, BenchmarkCentrality.EIGENVECTOR};
-            for (BenchmarkCentrality c1 : centralities) {
-                for (BenchmarkCentrality c2 : centralities) {
-                    if (c1.equals(c2)) {
-                        continue;
-                    }
+            /*BenchmarkCentrality[] centralities = {BenchmarkCentrality.DEGREE, BenchmarkCentrality.CLOSENESS, BenchmarkCentrality.BETWEENNESS, BenchmarkCentrality.HITS, BenchmarkCentrality.PAGERANK, BenchmarkCentrality.HINDEX, BenchmarkCentrality.LEADERRANK, BenchmarkCentrality.CLUSTERRANK, BenchmarkCentrality.LOCALCENTRALITY, BenchmarkCentrality.EIGENVECTOR};
+             for (BenchmarkCentrality c1 : centralities) {
+             for (BenchmarkCentrality c2 : centralities) {
+             if (c1.equals(c2)) {
+             continue;
+             }
 
-                    if (diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
-                        List<Node> infectiousListA = new ArrayList<Node>();
-                        List<Node> infectiousListB = new ArrayList<Node>();
+             if (diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
+             List<Node> infectiousListA = new ArrayList<Node>();
+             List<Node> infectiousListB = new ArrayList<Node>();
 
-                        centralityTag = getCentralityTag(c1);  // dbg  
-                        sortByCentrality(nodes, centralityTag);
-                        initNodes(nodes, infectiousListA, sirCol, deltaCol);
-                        pw.print(centralityTag + "-");
+             centralityTag = getCentralityTag(c1);  // dbg  
+             sortByCentrality(nodes, centralityTag);
+             initNodes(nodes, infectiousListA, sirCol, deltaCol);
+             pw.print(centralityTag + "-");
 
-                        centralityTag = getCentralityTag(c2);  // dbg  
-                        sortByCentrality(nodes, centralityTag);
-                        initNodes(nodes, infectiousListB, sirCol, deltaCol);
-                        pw.print(centralityTag + ":");
+             centralityTag = getCentralityTag(c2);  // dbg  
+             sortByCentrality(nodes, centralityTag);
+             initNodes(nodes, infectiousListB, sirCol, deltaCol);
+             pw.print(centralityTag + ":");
 
-                        infectiousList = mergeOpinions(infectiousListA, infectiousListB);
+             infectiousList = mergeOpinions(infectiousListA, infectiousListB);
 
-                        runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
-                        pw.print(shortReport);
-                        pw.println();
-                    }
-                }
-            }
-            pw.close();
+             runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
+             pw.print(shortReport);
+             pw.println();
+             }
+             }
+             }
+             pw.close();*/
 
             //tmp.deleteOnExit(); // no-log on desktop
         } catch (FileNotFoundException ex) {
             Exceptions.printStackTrace(ex);
         }
 
-        progress.switchToDeterminate(100);
+        progress.switchToDeterminate(
+                100);
         progress.finish();
+
         graph.readUnlockAll();
     }
+    private float _iterations = 0f, _coverage = 0f; // dbg
 
     private void runSIR(HierarchicalGraph graph, List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol) {
         int iteration = 0;
@@ -390,17 +398,17 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             }
         }
 
-        errorReport = "Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)\n";
-        errorReport += "Ended after " + iteration + " iterations\n";
-        errorReport += "End condition: " + endCondition.toString() + "\n\n";
-//            errorReport += "Infected\n";
-//            for (int inf : infCounter) {
-//                errorReport += inf;
-//            }
-        errorReport += "Recovered\n";
-        for (int rec : recCounter) {
-            errorReport += rec + "\n";
-        }
+//        errorReport = "Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)\n";
+//        errorReport += "Ended after " + iteration + " iterations\n";
+//        errorReport += "End condition: " + endCondition.toString() + "\n\n";
+//           
+//        errorReport += "Recovered\n";
+//        for (int rec : recCounter) {
+//            errorReport += rec + "\n";
+//        }
+
+        _iterations += iteration;
+        _coverage += (100.0 * recoveredList.size() / nodes.size());
     }
 
     private void runTolerance(HierarchicalGraph graph, List<Node> nodes, List<Node> stubbornAgents, AttributeColumn sirCol, AttributeColumn deltaCol) {
@@ -689,7 +697,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             List<Node> changeToInfectious = new ArrayList<Node>();
             List<Node> recoveredList = new ArrayList<Node>();
 
-            while (++iteration < 10) {
+            while (++iteration < 15) {
                 // any node infected longer than delta will become recovered
                 for (Node node : infectiousList.toArray(new Node[]{})) {
                     if (getDeltaInfect(node) >= deltaRecover) {
@@ -812,6 +820,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      */
     public void setProgressTicket(ProgressTicket progressTicket) {
         this.progress = progressTicket;
+
+
     }
 
     public static enum BenchmarkCentrality {

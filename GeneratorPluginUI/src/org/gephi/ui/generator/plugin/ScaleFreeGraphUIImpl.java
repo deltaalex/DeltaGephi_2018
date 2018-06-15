@@ -46,7 +46,7 @@ public class ScaleFreeGraphUIImpl implements ScaleFreeGraphUI {
         // metrics check group
         panel.checkDegree.setSelected(sfGraph.getMetric(Metric.Degree));
         panel.checkBetweenness.setSelected(sfGraph.getMetric(Metric.Betweenness));
-        panel.checkCentrality.setSelected(sfGraph.getMetric(Metric.Centrality));
+        panel.checkCentrality.setSelected(sfGraph.getMetric(Metric.Eigenvector));
         panel.checkCloseness.setSelected(sfGraph.getMetric(Metric.Closeness));
         panel.checkClustering.setSelected(sfGraph.getMetric(Metric.Clustering));
         // animation
@@ -68,7 +68,7 @@ public class ScaleFreeGraphUIImpl implements ScaleFreeGraphUI {
         sfGraph.setMetrics(new Metric[]{
                     panel.checkDegree.isSelected() ? Metric.Degree : null,
                     panel.checkBetweenness.isSelected() ? Metric.Betweenness : null,
-                    panel.checkCentrality.isSelected() ? Metric.Centrality : null,
+                    panel.checkCentrality.isSelected() ? Metric.Eigenvector : null,
                     panel.checkCloseness.isSelected() ? Metric.Closeness : null,
                     panel.checkClustering.isSelected() ? Metric.Clustering : null,});
 
