@@ -8,12 +8,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.gephi.data.attributes.api.AttributeTable;
 import org.gephi.data.attributes.api.AttributeColumn;
 import org.gephi.data.attributes.api.AttributeModel;
 import org.gephi.data.attributes.api.AttributeOrigin;
 import org.gephi.data.attributes.api.AttributeRow;
+import org.gephi.data.attributes.api.AttributeTable;
 import org.gephi.data.attributes.api.AttributeType;
+import org.gephi.graph.api.Edge;
 import org.gephi.graph.api.GraphController;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.HierarchicalDirectedGraph;
@@ -41,6 +42,7 @@ public class InfluenceRankings implements Statistics, LongTask {
     public static final String COMMUNITYLEADERRANK = "CommunityLeaderRank";
     public static final String LOCALCENTRALITY = "LocalCentrality";
     public static final String EDGECENTRALITY = "EdgeCentrality";
+    public static final String KSHELL = "KShell";
     /**
      *
      */
@@ -79,7 +81,7 @@ public class InfluenceRankings implements Statistics, LongTask {
     public void execute(HierarchicalGraph hgraph, AttributeModel attributeModel) {
         isCanceled = false;
 
-        hgraph.readLock();
+        //hgraph.readLock();
 
         switch (metric) {
             case HINDEX:
@@ -99,6 +101,9 @@ public class InfluenceRankings implements Statistics, LongTask {
                 break;
             case COMMUNITYLEADERRANK:
                 runCommunityLeaderRank(hgraph, attributeModel);
+                break;
+            case KSHELL:
+                runKShellDecomposition(hgraph, attributeModel);
                 break;
             default:
                 break;
@@ -586,6 +591,47 @@ public class InfluenceRankings implements Statistics, LongTask {
         }
     }
 
+    private void runKShellDecomposition(HierarchicalGraph hgraph, AttributeModel attributeModel) {
+
+        Progress.start(progress);
+
+        AttributeTable nodeTable = attributeModel.getNodeTable();
+        AttributeColumn kShellCol = nodeTable.getColumn(KSHELL);
+        if (kShellCol == null) {
+            kShellCol = nodeTable.addColumn(KSHELL, KSHELL, AttributeType.INT, AttributeOrigin.COMPUTED, new Integer(0));
+        }
+
+        // make a copy of the graph
+        SimpleGraph sGraph = new SimpleGraph(hgraph);
+        List<SimpleNode> toRemove = new ArrayList<SimpleNode>();
+
+        int currentShell = 0;
+        int count = 0;
+
+        // repeat while graph is not empty
+        while (!sGraph.isEmpty() && currentShell < hgraph.getNodeCount()) {
+            // repeat removing nodes on current shell until there are no nodes left            
+            do {
+                count = 0;
+                for (SimpleNode node : sGraph.getNodes()) {
+                    if (node.getDegree() == currentShell) {
+                        node.shell = currentShell;
+                        Node hNode = hgraph.getNode(node.getId());
+                        AttributeRow row = (AttributeRow) hNode.getNodeData().getAttributes();
+                        row.setValue(kShellCol, currentShell);
+                        toRemove.add(node);
+                        count++;
+                    }
+                }
+                for (SimpleNode node : toRemove) {
+                    sGraph.removeNode(node);
+                }
+                toRemove.clear();
+            } while (count > 0);
+            currentShell++;
+        }
+    }
+
     /**
      *
      * @return
@@ -685,5 +731,104 @@ public class InfluenceRankings implements Statistics, LongTask {
 
     public InfluenceMetricEnum getSelectedMetric() {
         return metric;
+    }
+
+    class SimpleGraph {
+
+        private HashMap<Integer, SimpleNode> nodes;
+        private HierarchicalGraph hGraph;
+
+        public SimpleGraph(HierarchicalGraph hGraph) {
+            this.hGraph = hGraph;
+            nodes = new HashMap<Integer, SimpleNode>();
+
+            // duplicate nodes by 'id'
+            for (Node node : hGraph.getNodes()) {
+                nodes.put(node.getId(), new SimpleNode(node.getId()));
+            }
+
+            // duplicate edges by adjacent nodes' ids            
+            SimpleNode n1, n2;
+            for (Edge edge : hGraph.getEdges()) {
+                int sourceId = edge.getSource().getId();
+                int targetId = edge.getTarget().getId();
+
+                n1 = getSimpleNodeById(sourceId);
+                n2 = getSimpleNodeById(targetId);
+
+                n1.addNeighbour(n2);
+            }
+        }
+
+        public List<SimpleNode> getNodes() {
+            return new ArrayList<SimpleNode>(nodes.values());
+        }
+
+        public SimpleNode getSimpleNodeById(int id) {
+            return nodes.get(id);
+        }
+
+        public boolean isEmpty() {
+            return nodes.isEmpty();
+        }
+
+        public void removeNode(SimpleNode node) {
+            // remove node's neighbours
+            for (SimpleNode neighbour : node.getNeighbours().toArray(new SimpleNode[]{})) {
+                node.removeNeighbour(neighbour);
+            }
+
+            // remove from hash map
+            int _key = -1;
+            for (Integer key : nodes.keySet()) {
+                if (nodes.get(key).equals(node)) {
+                    _key = key;
+                    break;
+                }
+            }
+
+            // node was found in hash map
+            if (_key != -1) {
+                nodes.remove(_key);
+            }
+        }
+    }
+
+    class SimpleNode {
+
+        private int id;
+        public int shell;
+        private List<SimpleNode> neighbours;
+
+        public SimpleNode(int id) {
+            this.id = id;
+            neighbours = new ArrayList<SimpleNode>();
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public List<SimpleNode> getNeighbours() {
+            return neighbours;
+        }
+
+        public void addNeighbour(SimpleNode neighbour) {
+            if (!neighbours.contains(neighbour)) {
+                neighbours.add(neighbour);
+                neighbour.addNeighbour(this);
+            }
+        }
+
+        public void removeNeighbour(SimpleNode node) {
+            if (neighbours.contains(node)) {
+                neighbours.remove(node);
+                node.removeNeighbour(this);
+            }
+        }
+
+        public int getDegree() {
+            return neighbours.size();
+        }
     }
 }

@@ -39,35 +39,28 @@
                   <Group type="102" attributes="0">
                       <EmptySpace min="21" pref="21" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="jXLabel4" max="32767" attributes="0"/>
-                              <Component id="jXLabel3" max="32767" attributes="0"/>
-                          </Group>
-                          <Group type="103" alignment="1" groupAlignment="0" attributes="0">
-                              <Component id="jXLabel5" min="-2" max="-2" attributes="0"/>
-                              <Component id="jXLabel6" min="-2" max="-2" attributes="0"/>
-                          </Group>
+                          <Component id="jXLabel4" max="32767" attributes="0"/>
+                          <Component id="jXLabel3" max="32767" attributes="0"/>
                       </Group>
                   </Group>
-                  <Group type="102" alignment="0" attributes="0">
-                      <Group type="103" groupAlignment="1" attributes="0">
-                          <Group type="103" groupAlignment="0" attributes="0">
-                              <Group type="102" alignment="0" attributes="0">
-                                  <EmptySpace min="21" pref="21" max="-2" attributes="0"/>
-                                  <Component id="jXLabel9" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                              <Component id="radioCommLeaderRank" alignment="0" min="-2" max="-2" attributes="0"/>
-                          </Group>
-                          <Group type="103" groupAlignment="0" attributes="0">
-                              <Group type="102" attributes="0">
-                                  <EmptySpace min="21" pref="21" max="-2" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="radioKShell" min="-2" max="-2" attributes="0"/>
+                          <Component id="radioCommLeaderRank" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="radioHirsch" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="radioLeaderRank" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="radioEdgeCentrality" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="radioLocalCentrality" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="radioClusterRank" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <EmptySpace min="21" pref="21" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="jXLabel10" min="-2" max="-2" attributes="0"/>
                                   <Component id="jXLabel8" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jXLabel9" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jXLabel5" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jXLabel6" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <Component id="radioEdgeCentrality" min="-2" max="-2" attributes="0"/>
-                              <Component id="radioClusterRank" min="-2" max="-2" attributes="0"/>
-                              <Component id="radioHirsch" min="-2" max="-2" attributes="0"/>
-                              <Component id="radioLeaderRank" alignment="0" min="-2" max="-2" attributes="0"/>
-                              <Component id="radioLocalCentrality" alignment="0" min="-2" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
@@ -87,14 +80,14 @@
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="undirectedRadioButton" min="-2" max="-2" attributes="0"/>
+                  <Component id="undirectedRadioButton" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Group type="102" alignment="0" attributes="0">
                       <Component id="jXLabel3" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="radioLeaderRank" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="7" max="-2" attributes="0"/>
               <Component id="jXLabel4" min="-2" max="-2" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="radioClusterRank" min="-2" max="-2" attributes="0"/>
@@ -112,7 +105,11 @@
               <Component id="radioCommLeaderRank" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="jXLabel9" min="-2" max="-2" attributes="0"/>
-              <EmptySpace pref="6" max="32767" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="radioKShell" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="jXLabel10" min="-2" max="-2" attributes="0"/>
+              <EmptySpace pref="26" max="32767" attributes="0"/>
               <Group type="103" groupAlignment="1" attributes="0">
                   <Component id="edgeWeightCheckbox" alignment="1" min="-2" max="-2" attributes="0"/>
                   <Component id="jXLabel7" min="-2" max="-2" attributes="0"/>
@@ -363,6 +360,35 @@
         <Property name="font" type="java.awt.Font" editor="org.netbeans.modules.form.editors2.FontEditor">
           <FontInfo relative="true">
             <Font component="jXLabel9" property="font" relativeSize="true" size="-1"/>
+          </FontInfo>
+        </Property>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JRadioButton" name="radioKShell">
+      <Properties>
+        <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
+          <ComponentRef name="metricsGroup"/>
+        </Property>
+        <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+          <ResourceString bundle="org/gephi/ui/statistics/plugin/Bundle.properties" key="InfluenceRankingsPanel.radioKShell.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+        </Property>
+      </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
+      </AuxValues>
+    </Component>
+    <Component class="org.jdesktop.swingx.JXLabel" name="jXLabel10">
+      <Properties>
+        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+          <Color blue="66" green="66" red="66" type="rgb"/>
+        </Property>
+        <Property name="lineWrap" type="boolean" value="true"/>
+        <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
+          <ResourceString bundle="org/gephi/ui/statistics/plugin/Bundle.properties" key="InfluenceRankingsPanel.jXLabel10.text" replaceFormat="org.openide.util.NbBundle.getMessage({sourceFileName}.class, &quot;{key}&quot;)"/>
+        </Property>
+        <Property name="font" type="java.awt.Font" editor="org.netbeans.modules.form.editors2.FontEditor">
+          <FontInfo relative="true">
+            <Font component="jXLabel10" property="font" relativeSize="true" size="-1"/>
           </FontInfo>
         </Property>
       </Properties>
