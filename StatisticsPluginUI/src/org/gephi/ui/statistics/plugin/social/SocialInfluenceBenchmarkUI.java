@@ -50,6 +50,7 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             panel.checkClusterRank.setSelected(centrality.equals(BenchmarkCentrality.CLUSTERRANK));
             panel.checkLeaderRank.setSelected(centrality.equals(BenchmarkCentrality.LEADERRANK));
             panel.checkLocalCentrality.setSelected(centrality.equals(BenchmarkCentrality.LOCALCENTRALITY));
+            panel.checkKShell.setSelected(centrality.equals(BenchmarkCentrality.KSHELL));
         }
     }
 
@@ -92,6 +93,9 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             }
             if (panel.checkLocalCentrality.isSelected()) {
                 centrality = BenchmarkCentrality.LOCALCENTRALITY;
+            }
+            if (panel.checkKShell.isSelected()) {
+                centrality = BenchmarkCentrality.KSHELL;
             }
 
             socialInfluence.setCentrality(centrality);

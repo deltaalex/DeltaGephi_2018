@@ -49,6 +49,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkClusterRank = new javax.swing.JCheckBox();
         checkLeaderRank = new javax.swing.JCheckBox();
         checkLocalCentrality = new javax.swing.JCheckBox();
+        checkKShell = new javax.swing.JCheckBox();
 
         setForeground(new java.awt.Color(51, 51, 255));
 
@@ -104,6 +105,10 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkLocalCentrality.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkLocalCentrality.text")); // NOI18N
         checkLocalCentrality.setActionCommand(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkLocalCentrality.actionCommand")); // NOI18N
 
+        buttonGroup1.add(checkKShell);
+        checkKShell.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkKShell.text")); // NOI18N
+        checkKShell.setActionCommand(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkKShell.actionCommand")); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -130,7 +135,8 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                             .addComponent(checkClusterRank)
                             .addComponent(checkHirschIndex)
                             .addComponent(checkLeaderRank)
-                            .addComponent(checkLocalCentrality))
+                            .addComponent(checkLocalCentrality)
+                            .addComponent(checkKShell))
                         .addGap(82, 82, 82))))
         );
         layout.setVerticalGroup(
@@ -165,7 +171,9 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                         .addComponent(checkLeaderRank)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(checkLocalCentrality)))
-                .addContainerGap(57, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(checkKShell)
+                .addContainerGap(31, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -180,6 +188,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
     protected javax.swing.JCheckBox checkEigen;
     protected javax.swing.JCheckBox checkHirschIndex;
     protected javax.swing.JCheckBox checkHits;
+    protected javax.swing.JCheckBox checkKShell;
     protected javax.swing.JCheckBox checkLeaderRank;
     protected javax.swing.JCheckBox checkLocalCentrality;
     protected javax.swing.JCheckBox checkPageRank;

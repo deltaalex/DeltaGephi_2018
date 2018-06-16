@@ -3,7 +3,6 @@ package org.gephi.statistics.plugin.social;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import org.gephi.statistics.plugin.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,6 +19,7 @@ import org.gephi.data.attributes.api.AttributeType;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.HierarchicalGraph;
 import org.gephi.graph.api.Node;
+import org.gephi.statistics.plugin.*;
 import org.gephi.statistics.spi.Statistics;
 import org.gephi.utils.longtask.spi.LongTask;
 import org.gephi.utils.progress.Progress;
@@ -59,7 +59,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE_COMPETE;
     /**
      * Stop condition for diffusion processes
      */
@@ -161,9 +161,9 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
         //final int REPEAT = 10;
         //for (int i = 0; i < REPEAT; ++i) { // dbg: repeat and average iterations and coverage
-            execute(graph, attributeModel);
-          //  errorReport = "Average coverage: " + 1f * _coverage / REPEAT;
-          //  errorReport += "\nAverage time: " + 1f * _iterations / REPEAT;
+        execute(graph, attributeModel);
+        //errorReport = "Average coverage: " + 1f * _coverage / REPEAT;
+        //errorReport += "\nAverage time: " + 1f * _iterations / REPEAT;
         //}
     }
 
@@ -276,48 +276,50 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
              }
              pw.close();*/
 
-//            for(Node inf : infectiousList) {
+//            for (Node inf : infectiousList) {
 //                pw.println(inf.getId());
 //            }
 
-            /*BenchmarkCentrality[] centralities = {BenchmarkCentrality.DEGREE, BenchmarkCentrality.CLOSENESS, BenchmarkCentrality.BETWEENNESS, BenchmarkCentrality.HITS, BenchmarkCentrality.PAGERANK, BenchmarkCentrality.HINDEX, BenchmarkCentrality.LEADERRANK, BenchmarkCentrality.CLUSTERRANK, BenchmarkCentrality.LOCALCENTRALITY, BenchmarkCentrality.EIGENVECTOR};
-             for (BenchmarkCentrality c1 : centralities) {
-             for (BenchmarkCentrality c2 : centralities) {
-             if (c1.equals(c2)) {
-             continue;
-             }
+            BenchmarkCentrality[] centralities = {BenchmarkCentrality.DEGREE, BenchmarkCentrality.CLOSENESS, BenchmarkCentrality.BETWEENNESS, BenchmarkCentrality.HITS, BenchmarkCentrality.PAGERANK, BenchmarkCentrality.HINDEX, BenchmarkCentrality.LEADERRANK, BenchmarkCentrality.KSHELL, BenchmarkCentrality.LOCALCENTRALITY, BenchmarkCentrality.EIGENVECTOR};
+            for (BenchmarkCentrality c1 : centralities) {
+                for (BenchmarkCentrality c2 : centralities) {
+                    if (c1.equals(c2)) {
+                        continue;
+                    }
+                    if(!c1.equals(BenchmarkCentrality.KSHELL) && !c2.equals(BenchmarkCentrality.KSHELL)) {
+                        continue;
+                    }
 
-             if (diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
-             List<Node> infectiousListA = new ArrayList<Node>();
-             List<Node> infectiousListB = new ArrayList<Node>();
+                    if (diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
+                        List<Node> infectiousListA = new ArrayList<Node>();
+                        List<Node> infectiousListB = new ArrayList<Node>();
 
-             centralityTag = getCentralityTag(c1);  // dbg  
-             sortByCentrality(nodes, centralityTag);
-             initNodes(nodes, infectiousListA, sirCol, deltaCol);
-             pw.print(centralityTag + "-");
+                        centralityTag = getCentralityTag(c1);  // dbg  
+                        sortByCentrality(nodes, centralityTag);
+                        initNodes(nodes, infectiousListA, sirCol, deltaCol);
+                        pw.print(centralityTag + "-");
 
-             centralityTag = getCentralityTag(c2);  // dbg  
-             sortByCentrality(nodes, centralityTag);
-             initNodes(nodes, infectiousListB, sirCol, deltaCol);
-             pw.print(centralityTag + ":");
+                        centralityTag = getCentralityTag(c2);  // dbg  
+                        sortByCentrality(nodes, centralityTag);
+                        initNodes(nodes, infectiousListB, sirCol, deltaCol);
+                        pw.print(centralityTag + ":");
 
-             infectiousList = mergeOpinions(infectiousListA, infectiousListB);
+                        infectiousList = mergeOpinions(infectiousListA, infectiousListB);
 
-             runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
-             pw.print(shortReport);
-             pw.println();
-             }
-             }
-             }
-             pw.close();*/
+                        runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
+                        pw.print(shortReport);
+                        pw.println();
+                    }
+                }
+            }
+            pw.close();
 
             //tmp.deleteOnExit(); // no-log on desktop
         } catch (FileNotFoundException ex) {
             Exceptions.printStackTrace(ex);
         }
 
-        progress.switchToDeterminate(
-                100);
+        progress.switchToDeterminate(100);
         progress.finish();
 
         graph.readUnlockAll();
@@ -398,14 +400,14 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             }
         }
 
-//        errorReport = "Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)\n";
-//        errorReport += "Ended after " + iteration + " iterations\n";
-//        errorReport += "End condition: " + endCondition.toString() + "\n\n";
-//           
-//        errorReport += "Recovered\n";
-//        for (int rec : recCounter) {
-//            errorReport += rec + "\n";
-//        }
+        errorReport = "Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)\n";
+        errorReport += "Ended after " + iteration + " iterations\n";
+        errorReport += "End condition: " + endCondition.toString() + "\n\n";
+
+        errorReport += "Recovered\n";
+        for (int rec : recCounter) {
+            errorReport += rec + "\n";
+        }
 
         _iterations += iteration;
         _coverage += (100.0 * recoveredList.size() / nodes.size());
@@ -826,7 +828,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
     public static enum BenchmarkCentrality {
 
-        DEGREE, BETWEENNESS, EIGENVECTOR, CLOSENESS, PAGERANK, HITS, BDPOWER, BDINFLUENCE, HINDEX, CLUSTERRANK, LEADERRANK, LOCALCENTRALITY
+        DEGREE, BETWEENNESS, EIGENVECTOR, CLOSENESS, PAGERANK, HITS, BDPOWER, BDINFLUENCE, HINDEX, CLUSTERRANK, LEADERRANK, LOCALCENTRALITY, KSHELL
     }
 
     public static enum DiffusionAlgorithm {
@@ -904,6 +906,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 return InfluenceRankings.LEADERRANK;
             case LOCALCENTRALITY:
                 return InfluenceRankings.LOCALCENTRALITY;
+            case KSHELL:
+                return InfluenceRankings.KSHELL;
             default:
                 return null;
         }
