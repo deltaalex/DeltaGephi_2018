@@ -227,11 +227,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
             centralityTag = getCentralityTag(BenchmarkCentrality.CLOSENESS);  // dbg  
             sortByCentrality(nodes, centralityTag);
-            initNodes(nodes, infectiousListA, sirCol, deltaCol);
+            initNodesByColoring(graph, nodes, infectiousListA, sirCol, deltaCol);
 
             centralityTag = getCentralityTag(BenchmarkCentrality.HINDEX);  // dbg  
             sortByCentrality(nodes, centralityTag);
-            initNodes(nodes, infectiousListB, sirCol, deltaCol);
+            initNodesByColoring(graph, nodes, infectiousListB, sirCol, deltaCol);
 
             infectiousList = mergeOpinions(infectiousListA, infectiousListB);
         }
@@ -280,38 +280,38 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 //                pw.println(inf.getId());
 //            }
 
-            BenchmarkCentrality[] centralities = {BenchmarkCentrality.DEGREE, BenchmarkCentrality.CLOSENESS, BenchmarkCentrality.BETWEENNESS, BenchmarkCentrality.HITS, BenchmarkCentrality.PAGERANK, BenchmarkCentrality.HINDEX, BenchmarkCentrality.LEADERRANK, BenchmarkCentrality.KSHELL, BenchmarkCentrality.LOCALCENTRALITY, BenchmarkCentrality.EIGENVECTOR};
-            for (BenchmarkCentrality c1 : centralities) {
-                for (BenchmarkCentrality c2 : centralities) {
-                    if (c1.equals(c2)) {
-                        continue;
-                    }
-                    if(!c1.equals(BenchmarkCentrality.KSHELL) && !c2.equals(BenchmarkCentrality.KSHELL)) {
-                        continue;
-                    }
+            /*BenchmarkCentrality[] centralities = {BenchmarkCentrality.DEGREE, BenchmarkCentrality.CLOSENESS, BenchmarkCentrality.BETWEENNESS, BenchmarkCentrality.HITS, BenchmarkCentrality.PAGERANK, BenchmarkCentrality.HINDEX, BenchmarkCentrality.LEADERRANK, BenchmarkCentrality.KSHELL, BenchmarkCentrality.LOCALCENTRALITY, BenchmarkCentrality.EIGENVECTOR};
+             for (BenchmarkCentrality c1 : centralities) {
+             for (BenchmarkCentrality c2 : centralities) {
+             if (c1.equals(c2)) {
+             continue;
+             }
+             if (!c1.equals(BenchmarkCentrality.KSHELL) && !c2.equals(BenchmarkCentrality.KSHELL)) {
+             continue;
+             }
 
-                    if (diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
-                        List<Node> infectiousListA = new ArrayList<Node>();
-                        List<Node> infectiousListB = new ArrayList<Node>();
+             if (diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
+             List<Node> infectiousListA = new ArrayList<Node>();
+             List<Node> infectiousListB = new ArrayList<Node>();
 
-                        centralityTag = getCentralityTag(c1);  // dbg  
-                        sortByCentrality(nodes, centralityTag);
-                        initNodes(nodes, infectiousListA, sirCol, deltaCol);
-                        pw.print(centralityTag + "-");
+             centralityTag = getCentralityTag(c1);  // dbg  
+             sortByCentrality(nodes, centralityTag);
+             initNodes(nodes, infectiousListA, sirCol, deltaCol);
+             pw.print(centralityTag + "-");
 
-                        centralityTag = getCentralityTag(c2);  // dbg  
-                        sortByCentrality(nodes, centralityTag);
-                        initNodes(nodes, infectiousListB, sirCol, deltaCol);
-                        pw.print(centralityTag + ":");
+             centralityTag = getCentralityTag(c2);  // dbg  
+             sortByCentrality(nodes, centralityTag);
+             initNodes(nodes, infectiousListB, sirCol, deltaCol);
+             pw.print(centralityTag + ":");
 
-                        infectiousList = mergeOpinions(infectiousListA, infectiousListB);
+             infectiousList = mergeOpinions(infectiousListA, infectiousListB);
 
-                        runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
-                        pw.print(shortReport);
-                        pw.println();
-                    }
-                }
-            }
+             runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
+             pw.print(shortReport);
+             pw.println();
+             }
+             }
+             }*/
             pw.close();
 
             //tmp.deleteOnExit(); // no-log on desktop
@@ -928,19 +928,101 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 } else {
                     Integer c1 = (Integer) n1.getAttributes().getValue(centralityTag);
                     Integer c2 = (Integer) n2.getAttributes().getValue(centralityTag);
-                    return c2.compareTo(c1);
-
+                    if (c1 != null && c2 != null) {
+                        return c2.compareTo(c1);
+                    } else {
+                        return 0;
+                    }
                 }
             }
         });
     }
 
+    /**
+     * Selects top 'pSeeders' sorted nodes as seeders
+     *
+     * @param nodes - the whole graph; sorted by a centralityTag
+     * @param infectiousList - empty list to be populated with selected seeders
+     * @param sirCol - marks seeders with 'INFECTED' status (top nodes)
+     * @param deltaCol - holds seeder specific information (e.g. lifetime,
+     * opinion)
+     */
     private void initNodes(List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol) {
         for (int i = 0; i < nodes.size(); ++i) {
             Node node = nodes.get(i);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
 
-            // set attributes
+            // set attributes for top seeder nodes
+            if (i <= pSeeders * nodes.size()) {
+                row.setValue(sirCol, SIRType.INFECTED);
+                row.setValue(deltaCol, 0);
+                infectiousList.add(node);
+            } else {
+                row.setValue(sirCol, SIRType.SUSCEPTIBLE);
+            }
+        }
+    }
+
+    // Welsh-Powell coloring algorithm
+    // http://graphstream-project.org/doc/Algorithms/Welsh-Powell/
+    /* Step 1: All vertices are sorted according to the decreasing value of their degree in a list V.
+     Step 2: Colors are ordered in a list C.
+     Step 3: The first non colored vertex v in V is colored with the first available color in C. available means a color that was not previously used by the algorithm.
+     Step 4: The remaining part of the ordered list V is traversed and the same color is allocated to every vertex for which no adjacent vertex has the same color.
+     Step 5: Steps 3 and 4 are applied iteratively until all the vertices have been colored.
+     */
+    private void initNodesByColoring(HierarchicalGraph graph, List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol) {
+        int color = 0;
+        int counter = 0;
+        Map<Integer, List<Node>> colored = new HashMap<Integer, List<Node>>();
+        colored.put(color, new ArrayList<Node>());
+
+        // color the first node with 0
+//        colored.add(nodes.get(0));
+        AttributeRow row;// = (AttributeRow) nodes.get(0).getNodeData().getAttributes();
+        //row.setValue(deltaCol, 0);
+
+        while (counter < nodes.size()) {
+            for (int i = 0; i < nodes.size(); ++i) {
+                Node node = nodes.get(i);
+
+                // if node is already colored then skip it
+                if (colored.get(color).contains(node)) {
+                    continue;
+                }
+
+                // if node is adjacent to a colored node with the current color then skip it
+                boolean hasAdjacentNode = false;
+                for (Node coloredNode : colored.get(color).toArray(new Node[]{})) {
+                    if (graph.isAdjacent(node, coloredNode) || graph.isAdjacent(coloredNode, node)) {
+                        hasAdjacentNode = true;
+                    }
+                }
+                if (!hasAdjacentNode) {
+                    //row = (AttributeRow) node.getNodeData().getAttributes();
+                    //row.setValue(deltaCol, color);
+                    colored.get(color).add(node);
+                    counter++;
+                }
+
+                //row = (AttributeRow) node.getNodeData().getAttributes();
+                // color node i
+                //row.setValue(sirCol, SIRType.INFECTED);
+                //row.setValue(deltaCol, color);
+                //colored.add(node);
+                //infectiousList.add(node);
+            }
+            color++;
+            colored.put(color, new ArrayList<Node>());
+        }
+
+        // select seeders from top color set (0) [hardcoded]
+        // VERY DANGEROUS CODE BELOW
+        for (int i = 0; i < colored.get(0).size(); ++i) {
+            Node node = nodes.get(i);
+            row = (AttributeRow) node.getNodeData().getAttributes();
+
+            // set attributes for top seeder nodes
             if (i <= pSeeders * nodes.size()) {
                 row.setValue(sirCol, SIRType.INFECTED);
                 row.setValue(deltaCol, 0);
