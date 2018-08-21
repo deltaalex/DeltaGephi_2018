@@ -32,8 +32,8 @@ public abstract class AbstractGraph {
     protected boolean cancel = false;
     // animation    
     private boolean animate = false;
-    private int animationNodeDelay = 25; // ms
-    private int animationEdgeDelay = 1; // ms    
+    private int animationNodeDelay = 1; // ms 25
+    private int animationEdgeDelay = 15; // ms 1 
     // other
     protected static final float NODE_SIZE = 5f;
 

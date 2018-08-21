@@ -225,11 +225,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             List<Node> infectiousListA = new ArrayList<Node>();
             List<Node> infectiousListB = new ArrayList<Node>();
 
-            centralityTag = getCentralityTag(BenchmarkCentrality.CLOSENESS);  // dbg  
+            centralityTag = getCentralityTag(BenchmarkCentrality.LEADERRANK);  // dbg  
             sortByCentrality(nodes, centralityTag);
             initNodesByColoring(graph, nodes, infectiousListA, sirCol, deltaCol);
 
-            centralityTag = getCentralityTag(BenchmarkCentrality.HINDEX);  // dbg  
+            centralityTag = getCentralityTag(BenchmarkCentrality.BETWEENNESS);  // dbg  
             sortByCentrality(nodes, centralityTag);
             initNodesByColoring(graph, nodes, infectiousListB, sirCol, deltaCol);
 
@@ -973,14 +973,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      */
     private void initNodesByColoring(HierarchicalGraph graph, List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol) {
         int color = 0;
-        int counter = 0;
+        int counter = 0; // counts how many nodes were colored 
+        AttributeRow row;
         Map<Integer, List<Node>> colored = new HashMap<Integer, List<Node>>();
-        colored.put(color, new ArrayList<Node>());
-
-        // color the first node with 0
-//        colored.add(nodes.get(0));
-        AttributeRow row;// = (AttributeRow) nodes.get(0).getNodeData().getAttributes();
-        //row.setValue(deltaCol, 0);
+        colored.put(color, new ArrayList<Node>());     
 
         while (counter < nodes.size()) {
             for (int i = 0; i < nodes.size(); ++i) {
@@ -998,19 +994,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                         hasAdjacentNode = true;
                     }
                 }
-                if (!hasAdjacentNode) {
-                    //row = (AttributeRow) node.getNodeData().getAttributes();
-                    //row.setValue(deltaCol, color);
+                if (!hasAdjacentNode) {                  
                     colored.get(color).add(node);
                     counter++;
-                }
-
-                //row = (AttributeRow) node.getNodeData().getAttributes();
-                // color node i
-                //row.setValue(sirCol, SIRType.INFECTED);
-                //row.setValue(deltaCol, color);
-                //colored.add(node);
-                //infectiousList.add(node);
+                }              
             }
             color++;
             colored.put(color, new ArrayList<Node>());
@@ -1019,7 +1006,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // select seeders from top color set (0) [hardcoded]
         // VERY DANGEROUS CODE BELOW
         for (int i = 0; i < colored.get(0).size(); ++i) {
-            Node node = nodes.get(i);
+            Node node = colored.get(0).get(i);
             row = (AttributeRow) node.getNodeData().getAttributes();
 
             // set attributes for top seeder nodes

@@ -23,27 +23,27 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service = Generator.class)
 public class SmallWorldGraph extends AbstractGraph implements Generator {
-
+    
     private int numberOfNodes = 1000;
-    private int K = 5;
+    private int K = 32;
     private double wiringProbability = 0.33333; // 0.2
 
     public enum TYPE {
-
+        
         WS, HK, Tv, uSF, SFE
     }
-    private TYPE type = TYPE.WS;
-
+    private TYPE type = TYPE.SFE;
+    
     @Override
     protected int initialize() {
         return numberOfNodes + 1;
     }
-
+    
     @Override
     protected void runGeneration(GraphModel graphModel, Random random) {
-
+        
         Cell cell = new Cell(numberOfNodes);
-
+        
         if (type.equals(TYPE.HK)) {
             createHolmeKimNetwork(cell, numberOfNodes, graphModel);
             return;
@@ -74,7 +74,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
             animateNode();
             progressTick();
         }
-
+        
         createSmallWorldCommunity(cell, graphModel, random, K, K, wiringProbability, false, false);
 
 //        // dbg       
@@ -94,7 +94,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
 
         progressTick();
     }
-
+    
     private void createHolmeKimNetwork(Cell cell, int N, GraphModel graphModel) {
         // size of seed network
         int n0 = 3;
@@ -102,7 +102,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
 
         // initialize random graph seed        
         initializeRandomGraph(cell.getNodes(), graphModel.getGraph(), n0, 1, false, false);
-
+        
         for (int i = n0; i < N; ++i) {
             // create new node
             Node newNode = graphModel.factory().newNode();
@@ -126,7 +126,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
 
             // every node must be connected !
             boolean connected = false;
-
+            
             while (!connected) {
                 // preferential attachment
                 for (int j = 0; j < cell.getNodes().size(); ++j) {
@@ -152,12 +152,12 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
                                 }
                             }
                         }
-
+                        
                         if (neighbors.size() > 0) {
 
                             // pick one random non-adjacent neighbor to connect to
                             Node neighbor = neighbors.get(rand.nextInt(neighbors.size()));
-
+                            
                             edge = graphModel.factory().newEdge(newNode, neighbor);
                             graphModel.getGraph().addEdge(edge);
 
@@ -169,7 +169,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
             }
         }
     }
-
+    
     private void createToivonenNetwork(Cell cell, int N, GraphModel graphModel) {
         // size of seed network
         int n0 = 20;
@@ -181,14 +181,14 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
 
         // initialize random graph seed        
         initializeRandomGraph(cell.getNodes(), graphModel.getGraph(), n0, 0.25, false, false);
-
+        
         for (int i = n0; i < N; ++i) {
             int mr = rand.nextDouble() < pmr1 ? 1 : 2;
 
             // pick random initial contacts
             List<Node> contacts = new ArrayList<Node>();
             List<Node> contacts2 = new ArrayList<Node>();
-
+            
             for (int j = 0; j < mr; ++j) {
                 Node contact = null;
                 while (contact == null || contacts.contains(contact)) {
@@ -259,7 +259,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
 
         // candidate nodes with degree > 0
         List<Node> candidates = new ArrayList<Node>();
-
+        
         for (int i = 0; i < N; ++i) {
             // create new node
             Node newNode = graphModel.factory().newNode();
@@ -283,7 +283,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
                     index = rand.nextInt(candidates.size());
                 }
                 Node other = cell.getNodes().get(index);
-
+                
                 Edge edge = graphModel.factory().newEdge(current, other);
                 graphModel.getGraph().addEdge(edge);
 
@@ -306,11 +306,11 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
     /**
      * Alex & Mihai network Creates a network whose edges are added between any
      * two nodes with a probability indirect proportional to the distance
-     * between the two nodes. The results is a power-law distribution of edges
+     * between the two nodes. The result is a power-law distribution of edges
      * based on distance: very few long range links -- many short range links.
      * Distance between two nodes is given by their initial random position in a
-     * square of size 100x100 / 1000x1000 etc. Goal: obtain a SW network from a
-     * preferential attachment principle
+     * square of size KxK (100x100 etc.) Goal: obtain a SW network from the
+     * preferential attachment principle!
      */
     private void createSFEdgeNetwork(Cell cell, int N, GraphModel graphModel) {
         Random rand = new Random();
@@ -339,7 +339,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
             for (int j = i + 1; j < N; ++j) {
                 n1 = cell.getNodes().get(i);
                 n2 = cell.getNodes().get(j);
-                // probability of edge(1,2) = 1/distance(1,2)
+                // probability of edge(1,2) = 1/distance(1,2)^gamma
                 if (rand.nextDouble() < Math.pow(distanceXY(n1, n2), -gamma)) {
                     // create edge
                     Edge edge = graphModel.factory().newEdge(n1, n2);
@@ -350,7 +350,7 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
             }
         }
     }
-
+    
     private double distanceXY(Node n1, Node n2) {
         return Math.sqrt((n1.getNodeData().x() - n2.getNodeData().x()) * (n1.getNodeData().x() - n2.getNodeData().x())
                 + (n1.getNodeData().y() - n2.getNodeData().y()) * (n1.getNodeData().y() - n2.getNodeData().y()));
@@ -360,48 +360,48 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
     public String getName() {
         return NbBundle.getMessage(SmallWorldGraph.class, "SmallWorldGraph.name");
     }
-
+    
     public TYPE getType() {
         return type;
     }
-
+    
     public GeneratorUI getUI() {
         return Lookup.getDefault().lookup(SmallWorldGraphUI.class);
     }
-
+    
     public void setNumberOfNodes(int numberOfNodes) {
         if (numberOfNodes < 0) {
             throw new IllegalArgumentException("# of nodes must be greater than 0");
         }
         this.numberOfNodes = numberOfNodes;
     }
-
+    
     public void setKNeighbors(int K) {
         if (K < 0) {
             throw new IllegalArgumentException("# of neighbors must be greater than 0");
         }
         this.K = K;
     }
-
+    
     public void setWiringProbability(double wiringProbability) {
         if (wiringProbability < 0 || wiringProbability > 1) {
             throw new IllegalArgumentException("Wiring probability must be between 0 and 1");
         }
         this.wiringProbability = wiringProbability;
     }
-
+    
     public int getNumberOfNodes() {
         return numberOfNodes;
     }
-
+    
     public int getKNeighbors() {
         return K;
     }
-
+    
     public double getWiringProbability() {
         return wiringProbability;
     }
-
+    
     public void setType(int type) {
         switch (type) {
             case 1:
