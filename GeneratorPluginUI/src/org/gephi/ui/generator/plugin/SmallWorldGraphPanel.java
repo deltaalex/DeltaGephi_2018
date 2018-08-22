@@ -18,7 +18,7 @@ public class SmallWorldGraphPanel extends javax.swing.JPanel {
     private static final int maxNodeDelay = 500;
     private static final int minEdgeDelay = 1;
     private static final int maxEdgeDelay = 100;
-    
+
     /**
      * Creates new form RandomGraphPanel
      */
@@ -36,9 +36,9 @@ public class SmallWorldGraphPanel extends javax.swing.JPanel {
         ValidationGroup group = validationPanel.getValidationGroup();
 
         // graph parameters
-        group.add(innerPanel.nodeField, Validators.REQUIRE_NON_EMPTY_STRING, new PositiveNumberValidator());       
-        group.add(innerPanel.kField, Validators.REQUIRE_NON_EMPTY_STRING, new PositiveNumberValidator());           
-        group.add(innerPanel.wiringField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());           
+        group.add(innerPanel.nodeField, Validators.REQUIRE_NON_EMPTY_STRING, new PositiveNumberValidator());
+        group.add(innerPanel.kField, Validators.REQUIRE_NON_EMPTY_STRING, new IntegerIntervalValidator(0, 1000));
+        group.add(innerPanel.wiringField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());
         // animation parameters
         group.add(innerPanel.tAnimateNode, Validators.REQUIRE_NON_EMPTY_STRING, new IntegerIntervalValidator(minNodeDelay, maxNodeDelay));
         group.add(innerPanel.tAnimateEdge, Validators.REQUIRE_NON_EMPTY_STRING, new IntegerIntervalValidator(minEdgeDelay, maxEdgeDelay));

@@ -1,5 +1,6 @@
 package org.gephi.io.generator.plugin;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,7 +26,7 @@ import org.openide.util.lookup.ServiceProvider;
 public class SmallWorldGraph extends AbstractGraph implements Generator {
 
     private int numberOfNodes = 1000;
-    private int K = 32;
+    private int K = 0;
     private double wiringProbability = 0.33333; // 0.2
 
     public enum TYPE {
@@ -316,30 +317,17 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
         Random rand = new Random();
         Node n1, n2;
         double gamma = 1 / wiringProbability;
-        boolean hexagonal = false;
+        boolean hexagonal = false; // deprecated !
 
         // K used as distance here!!!      
         if (hexagonal) {
             // create the N nodes as a hexagonal spaced points on a 2D lattice       
             createHexagonTopology(cell, N, graphModel);
         } else {
-            // create the N nodes with spatial coordinates (0,K) x (0,K);       
-            K = (int) Math.sqrt(N) + 1;
-            
-            for (int i = 0; i < N; ++i) {
-                // create new node
-                Node newNode = graphModel.factory().newNode();
-                // initialize node
-                newNode.getNodeData().setSize(NODE_SIZE);
-                //newNode.getNodeData().setLabel(Integer.toString(i));
-                newNode.getNodeData().setX(rand.nextFloat() * K);
-                newNode.getNodeData().setY(rand.nextFloat() * K);
-                // add to graph
-                graphModel.getGraph().addNode(newNode);
-                cell.addNode(newNode);
-                //Sleep some time
-                animateNode();
-            }
+            // create the N nodes with spatial coordinates (0,sqrt(N)) x (0,sqrt(N));   
+            // optionally K can be used to place random centers of gravity that 
+            // pull nodes towards them, creating more dense communitites
+            createRandomXYToplogyWithCentroids(cell, N, graphModel, K);
         }
 
         // for each node, try to add edge
@@ -354,6 +342,51 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
                     graphModel.getGraph().addEdge(edge);
                     //Sleep some time
                     animateEdge();
+                }
+            }
+        }
+    }
+
+    private void createRandomXYToplogyWithCentroids(Cell cell, int N, GraphModel graphModel, int numCentroids) {
+        Random rand = new Random();
+        int a = (int) Math.sqrt(N) + 1;
+
+        for (int i = 0; i < N; ++i) {
+            // create new node
+            Node newNode = graphModel.factory().newNode();
+            // initialize node
+            newNode.getNodeData().setSize(NODE_SIZE);
+            //newNode.getNodeData().setLabel(Integer.toString(i));
+            newNode.getNodeData().setX(rand.nextFloat() * a);
+            newNode.getNodeData().setY(rand.nextFloat() * a);
+            // add to graph
+            graphModel.getGraph().addNode(newNode);
+            cell.addNode(newNode);
+            //Sleep some time
+            animateNode();
+        }
+
+        // create centers of gravity at random coordinates        
+        if (numCentroids > 0) {
+            List<Point2D.Float> centroids = new ArrayList<Point2D.Float>(numCentroids);
+
+            // place centroids at random (x,y) coordinates within (0,a)^2
+            for (int i = 0; i < numCentroids; ++i) {
+                centroids.add(new Point2D.Float(rand.nextFloat() * a, rand.nextFloat() * a));
+            }
+
+            // attract each node towards each centroids with a force (dx,dy) equal to
+            // dx = dist(ni, ci)^-gamma;
+            for (Node node : cell.getNodes()) {
+                for (Point2D.Float centroid : centroids) {
+                    float dx = Math.abs(distanceOX(node, centroid));
+                    float dy = Math.abs(distanceOY(node, centroid));
+
+                    //if (dx < a / 4 && dy < a / 4) {
+                        node.getNodeData().setX(node.getNodeData().x() - dx / distanceOX(node, centroid) * Math.min(dx, 1f / dx));
+                        node.getNodeData().setY(node.getNodeData().y() - dy / distanceOY(node, centroid) * Math.min(dy, 1f / dy));
+                    //}
+
                 }
             }
         }
@@ -393,6 +426,14 @@ public class SmallWorldGraph extends AbstractGraph implements Generator {
     private double distanceXY(Node n1, Node n2) {
         return Math.sqrt((n1.getNodeData().x() - n2.getNodeData().x()) * (n1.getNodeData().x() - n2.getNodeData().x())
                 + (n1.getNodeData().y() - n2.getNodeData().y()) * (n1.getNodeData().y() - n2.getNodeData().y()));
+    }
+
+    private float distanceOX(Node n1, Point2D.Float point) {
+        return n1.getNodeData().x() - point.x;
+    }
+
+    private float distanceOY(Node n1, Point2D.Float point) {
+        return n1.getNodeData().y() - point.y;
     }
 
 // <editor-fold defaultstate="collapsed" desc="Getters/Setters">
