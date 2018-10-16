@@ -218,7 +218,8 @@ public class NetworkRobustness implements Statistics, LongTask {
                     }
                 }
 
-                errorReport += edgesToRemove.size() /*+ " [" + (1.0 * edgesToRemove.size() / graph.getTotalEdgeCount()) + "]\n"*/ + "\n";
+                //errorReport += edgesToRemove.size() /*+ " [" + (1.0 * edgesToRemove.size() / graph.getTotalEdgeCount()) + "]\n"*/ + "\n";
+                errorReport += gcSize + "\n";
                 pw.println(edgesToRemove.size() + "," + gcSize + "," + numComponents);
             }
 
@@ -490,6 +491,11 @@ public class NetworkRobustness implements Statistics, LongTask {
     private int edgesRemoved = 0, failedActivationsPerIteration = 0;
 
     public String getReport() {
+        // debug
+        if (1 == 1) {
+            return getCopyPasteReport();
+        }
+
         String report = "<HTML> <BODY> <h1>Edge weight evolution</h1> "
                 + "<hr><br>";
 
@@ -500,6 +506,13 @@ public class NetworkRobustness implements Statistics, LongTask {
         report += errorReport + "</BODY></HTML>";
 
         return report;
+    }
+
+    public String getCopyPasteReport() {
+        String report = "<HTML> <BODY>" + repairRatio + "\n";
+        report += errorReport + "</BODY></HTML>";
+
+        return report.trim();
     }
 
     private class ExtraEdgeData {

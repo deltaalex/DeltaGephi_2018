@@ -35,7 +35,7 @@ public abstract class AbstractGraph {
     private int animationNodeDelay = 1; // ms 25
     private int animationEdgeDelay = 15; // ms 1 
     // other
-    protected static final float NODE_SIZE = 5f;
+    protected static final float NODE_SIZE = 12f;
 
     public void generate(ContainerLoader container) {
 

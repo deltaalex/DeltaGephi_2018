@@ -22,7 +22,7 @@ public class FractalGraph extends AbstractGraph implements Generator {
 
     private final int radius = 1000;
     private int numberOfNodes = 100;
-    private double pWiring = 10;
+    private double pWiring = 1;
     private int numberOfCommunities = 5;
     private int fractalLevels = 2;
 
@@ -106,7 +106,7 @@ public class FractalGraph extends AbstractGraph implements Generator {
             for (int j = i + 1; j < communities.size(); ++j) {
                 c1 = communities.get(i);
                 c2 = communities.get(j);
-                
+
                 //maxDegree = getPowerDistributedIntegerValue(random, 1, random.nextInt(Math.max(c1.size(), c2.size())));
                 //maxDegree = random.nextInt(Math.max(c1.size(), c2.size()));
                 maxDegree = Math.max(c1.size(), c2.size());
