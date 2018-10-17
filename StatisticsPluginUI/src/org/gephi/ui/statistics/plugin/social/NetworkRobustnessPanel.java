@@ -2,9 +2,12 @@ package org.gephi.ui.statistics.plugin.social;
 
 import org.gephi.lib.validation.BetweenZeroAndOneValidator;
 import org.gephi.lib.validation.PositiveNumberValidator;
+import org.netbeans.validation.api.Problems;
+import org.netbeans.validation.api.Validator;
 import org.netbeans.validation.api.builtin.Validators;
 import org.netbeans.validation.api.ui.ValidationGroup;
 import org.netbeans.validation.api.ui.ValidationPanel;
+import org.openide.util.NbBundle;
 
 /**
  *
@@ -26,9 +29,25 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
         ValidationGroup group = validationPanel.getValidationGroup();
 
         // graph parameters
-        group.add(innerPanel.iterationsField, Validators.REQUIRE_NON_EMPTY_STRING, new PositiveNumberValidator());       
+        group.add(innerPanel.iterationsField, Validators.REQUIRE_NON_EMPTY_STRING, new PositiveNumberValidator());
         group.add(innerPanel.attackField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());
-        group.add(innerPanel.repairField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());
+        group.add(innerPanel.repairField, Validators.REQUIRE_NON_EMPTY_STRING, new Validator<String>() {
+            @Override
+            public boolean validate(Problems problems, String compName, String model) {
+                boolean result = false;
+                try {
+                    Double d = Double.parseDouble(model);
+                    result = d >= 0 && d <= 100.0;
+                } catch (Exception e) {
+                }
+                if (!result) {
+                    String message = NbBundle.getMessage(PositiveNumberValidator.class,
+                            "PositiveNumberValidator_NOT_POSITIVE", model);
+                    problems.add(message);
+                }
+                return result;
+            }
+        });
 
         return validationPanel;
     }
@@ -191,7 +210,6 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
     private void repairFieldKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_repairFieldKeyReleased
         // TODO add your handling code here:
     }//GEN-LAST:event_repairFieldKeyReleased
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     protected javax.swing.JComboBox attackCombo;
     protected javax.swing.JTextField attackField;
