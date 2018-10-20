@@ -83,8 +83,8 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
         header.setTitle(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.header.title")); // NOI18N
 
         labelRandomize4.setFont(labelRandomize4.getFont().deriveFont(labelRandomize4.getFont().getSize()-1f));
-        labelRandomize4.setForeground(new java.awt.Color(102, 102, 102));
         labelRandomize4.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.labelRandomize4.text")); // NOI18N
+        labelRandomize4.setForeground(new java.awt.Color(102, 102, 102));
 
         lIterations.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lIterations.text")); // NOI18N
 
@@ -95,9 +95,9 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
             }
         });
 
-        lSolutionSize3.setForeground(new java.awt.Color(102, 102, 102));
         lSolutionSize3.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lSolutionSize3.text")); // NOI18N
         lSolutionSize3.setToolTipText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lSolutionSize3.toolTipText")); // NOI18N
+        lSolutionSize3.setForeground(new java.awt.Color(102, 102, 102));
 
         lAlpha.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lAlpha.text")); // NOI18N
 
@@ -108,9 +108,9 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
             }
         });
 
-        lSolutionSize5.setForeground(new java.awt.Color(102, 102, 102));
         lSolutionSize5.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lSolutionSize5.text")); // NOI18N
         lSolutionSize5.setToolTipText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lSolutionSize5.toolTipText")); // NOI18N
+        lSolutionSize5.setForeground(new java.awt.Color(102, 102, 102));
 
         lBeta.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lBeta.text")); // NOI18N
 
@@ -121,9 +121,9 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
             }
         });
 
-        lSolutionSize6.setForeground(new java.awt.Color(102, 102, 102));
         lSolutionSize6.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lSolutionSize6.text")); // NOI18N
         lSolutionSize6.setToolTipText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lSolutionSize6.toolTipText")); // NOI18N
+        lSolutionSize6.setForeground(new java.awt.Color(102, 102, 102));
 
         lBeta1.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lBeta1.text")); // NOI18N
 
@@ -131,7 +131,7 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
 
         lBeta2.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lBeta2.text")); // NOI18N
 
-        repairCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Random", "Highest Degree First", "Lowest Degree First", "None", " " }));
+        repairCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Random", "Highest Degree First", "Highest Betweenness First", "Lowest Degree First", "Lowest Betweenness First", "None", " " }));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);

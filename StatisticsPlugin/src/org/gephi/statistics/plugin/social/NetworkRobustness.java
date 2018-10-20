@@ -48,9 +48,9 @@ public class NetworkRobustness implements Statistics, LongTask {
     private ATTACK_TYPE attackType = ATTACK_TYPE.RANDOM;
     /**
      * Defines repair strategy for adding new edges to: random nodes, or based
-     * on highest degree, or lowest degree first.
+     * on highest degree/btw, or lowest degree/btw first.
      */
-    private REPAIR_TYPE repairType = REPAIR_TYPE.NONE;
+    private REPAIR_TYPE repairType = REPAIR_TYPE.RANDOM;
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -185,8 +185,14 @@ public class NetworkRobustness implements Statistics, LongTask {
                     case HIGHEST_DEGREE_FIRST:
                         affectedNodes = pickNodesByDegree(affectedNodes, (int) (edgesToRemove.size() * repairRatio), true);
                         break;
+                    case HIGHEST_BETWEENNESS_FIRST:
+                        affectedNodes = pickNodesByBetweenness(affectedNodes, (int) (edgesToRemove.size() * repairRatio), true);
+                        break;
                     case LOWEST_DEGREE_FIRST:
                         affectedNodes = pickNodesByDegree(affectedNodes, (int) (edgesToRemove.size() * repairRatio), false);
+                        break;
+                    case LOWEST_BETWEENNESS_FIRST:
+                        affectedNodes = pickNodesByBetweenness(affectedNodes, (int) (edgesToRemove.size() * repairRatio), false);
                         break;
                     case NONE:
                         break;
@@ -278,6 +284,30 @@ public class NetworkRobustness implements Statistics, LongTask {
                 } else {
                     return +1 * ((Integer) (n1.getAttributes().getValue(Degree.DEGREE)))
                             .compareTo((Integer) (n2.getAttributes().getValue(Degree.DEGREE)));
+                }
+            }
+        });
+
+        // add first nodes to affected list
+        for (int i = 0; i < nodesToKeep && i < nodes.size(); ++i) {
+            affectedNodes.add(nodes.get(i));
+        }
+
+        return affectedNodes;
+    }
+    
+    private List<Node> pickNodesByBetweenness(List<Node> nodes, int nodesToKeep, final boolean highBetweennessFirst) {
+        List<Node> affectedNodes = new ArrayList<Node>();
+
+        Collections.sort(nodes, new Comparator<Node>() {
+            // sort by node degree
+            public int compare(Node n1, Node n2) {
+                if (highBetweennessFirst) {
+                    return -1 * ((Double) (n1.getAttributes().getValue(GraphDistance.BETWEENNESS)))
+                            .compareTo((Double) (n2.getAttributes().getValue(GraphDistance.BETWEENNESS)));
+                } else {
+                    return +1 * ((Double) (n1.getAttributes().getValue(GraphDistance.BETWEENNESS)))
+                            .compareTo((Double) (n2.getAttributes().getValue(GraphDistance.BETWEENNESS)));
                 }
             }
         });
@@ -546,7 +576,7 @@ public class NetworkRobustness implements Statistics, LongTask {
 
     public enum REPAIR_TYPE {
 
-        RANDOM, HIGHEST_DEGREE_FIRST, LOWEST_DEGREE_FIRST, NONE
+        RANDOM, HIGHEST_DEGREE_FIRST, HIGHEST_BETWEENNESS_FIRST, LOWEST_DEGREE_FIRST, LOWEST_BETWEENNESS_FIRST, NONE
     }
 // </editor-fold>
 }

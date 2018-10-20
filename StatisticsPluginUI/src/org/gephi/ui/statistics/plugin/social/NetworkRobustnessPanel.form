@@ -266,12 +266,14 @@
     <Component class="javax.swing.JComboBox" name="repairCombo">
       <Properties>
         <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-          <StringArray count="5">
+          <StringArray count="7">
             <StringItem index="0" value="Random"/>
             <StringItem index="1" value="Highest Degree First"/>
-            <StringItem index="2" value="Lowest Degree First"/>
-            <StringItem index="3" value="None"/>
-            <StringItem index="4" value=" "/>
+            <StringItem index="2" value="Highest Betweenness First"/>
+            <StringItem index="3" value="Lowest Degree First"/>
+            <StringItem index="4" value="Lowest Betweenness First"/>
+            <StringItem index="5" value="None"/>
+            <StringItem index="6" value=" "/>
           </StringArray>
         </Property>
       </Properties>
