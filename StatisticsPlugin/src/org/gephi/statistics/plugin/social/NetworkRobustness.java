@@ -227,6 +227,11 @@ public class NetworkRobustness implements Statistics, LongTask {
                 //errorReport += edgesToRemove.size() /*+ " [" + (1.0 * edgesToRemove.size() / graph.getTotalEdgeCount()) + "]\n"*/ + "\n";
                 errorReport += gcSize + "\n";
                 pw.println(edgesToRemove.size() + "," + gcSize + "," + numComponents);
+
+//                if (1.0 * gcSize / nodes.size() < 0.25) // debug destroy networks down to GC = 25%N
+//                {
+//                    break;
+//                }
             }
 
             pw.close();
@@ -295,7 +300,7 @@ public class NetworkRobustness implements Statistics, LongTask {
 
         return affectedNodes;
     }
-    
+
     private List<Node> pickNodesByBetweenness(List<Node> nodes, int nodesToKeep, final boolean highBetweennessFirst) {
         List<Node> affectedNodes = new ArrayList<Node>();
 
