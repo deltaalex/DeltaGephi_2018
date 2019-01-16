@@ -1,5 +1,7 @@
 package org.gephi.ui.statistics.plugin.social;
 
+import org.gephi.lib.validation.BetweenZeroAndOneValidator;
+import org.netbeans.validation.api.builtin.Validators;
 import org.netbeans.validation.api.ui.ValidationGroup;
 import org.netbeans.validation.api.ui.ValidationPanel;
 
@@ -21,6 +23,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         validationPanel.setInnerComponent(innerPanel);
 
         ValidationGroup group = validationPanel.getValidationGroup();       
+        group.add(innerPanel.spreaderField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());
 
         return validationPanel;
     }
@@ -50,6 +53,8 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkLeaderRank = new javax.swing.JCheckBox();
         checkLocalCentrality = new javax.swing.JCheckBox();
         checkKShell = new javax.swing.JCheckBox();
+        labelRandomize5 = new javax.swing.JLabel();
+        spreaderField = new javax.swing.JTextField();
 
         setForeground(new java.awt.Color(51, 51, 255));
 
@@ -109,6 +114,12 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkKShell.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkKShell.text")); // NOI18N
         checkKShell.setActionCommand(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkKShell.actionCommand")); // NOI18N
 
+        labelRandomize5.setFont(labelRandomize5.getFont().deriveFont(labelRandomize5.getFont().getSize()-1f));
+        labelRandomize5.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.labelRandomize5.text")); // NOI18N
+        labelRandomize5.setForeground(new java.awt.Color(102, 102, 102));
+
+        spreaderField.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.spreaderField.text")); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -137,7 +148,12 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                             .addComponent(checkLeaderRank)
                             .addComponent(checkLocalCentrality)
                             .addComponent(checkKShell))
-                        .addGap(82, 82, 82))))
+                        .addGap(82, 82, 82))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(labelRandomize5, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(spreaderField, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
+                        .addGap(263, 263, 263))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -173,7 +189,11 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                         .addComponent(checkLocalCentrality)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(checkKShell)
-                .addContainerGap(31, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelRandomize5)
+                    .addComponent(spreaderField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(18, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -194,5 +214,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
     protected javax.swing.JCheckBox checkPageRank;
     private org.jdesktop.swingx.JXHeader header;
     private javax.swing.JLabel labelRandomize4;
+    private javax.swing.JLabel labelRandomize5;
+    protected javax.swing.JTextField spreaderField;
     // End of variables declaration//GEN-END:variables
 }

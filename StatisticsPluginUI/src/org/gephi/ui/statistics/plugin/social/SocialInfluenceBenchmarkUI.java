@@ -31,6 +31,7 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
         if (panel != null) {
             BenchmarkCentrality centrality = socialInfluence.getCentrality();
 
+            panel.spreaderField.setText(String.valueOf(socialInfluence.getSeeders()));
             if (centrality == null) {
                 panel.checkDegree.setSelected(true);
                 return;
@@ -50,7 +51,7 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             panel.checkClusterRank.setSelected(centrality.equals(BenchmarkCentrality.CLUSTERRANK));
             panel.checkLeaderRank.setSelected(centrality.equals(BenchmarkCentrality.LEADERRANK));
             panel.checkLocalCentrality.setSelected(centrality.equals(BenchmarkCentrality.LOCALCENTRALITY));
-            panel.checkKShell.setSelected(centrality.equals(BenchmarkCentrality.KSHELL));
+            panel.checkKShell.setSelected(centrality.equals(BenchmarkCentrality.KSHELL));                        
         }
     }
 
@@ -97,8 +98,9 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             if (panel.checkKShell.isSelected()) {
                 centrality = BenchmarkCentrality.KSHELL;
             }
-
+                        
             socialInfluence.setCentrality(centrality);
+            socialInfluence.setSeeders(Double.parseDouble(panel.spreaderField.getText()));
         }
         socialInfluence = null;
         panel = null;
