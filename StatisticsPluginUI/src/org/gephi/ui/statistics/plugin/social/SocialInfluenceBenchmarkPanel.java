@@ -1,6 +1,7 @@
 package org.gephi.ui.statistics.plugin.social;
 
 import org.gephi.lib.validation.BetweenZeroAndOneValidator;
+import org.gephi.lib.validation.IntegerIntervalValidator;
 import org.netbeans.validation.api.builtin.Validators;
 import org.netbeans.validation.api.ui.ValidationGroup;
 import org.netbeans.validation.api.ui.ValidationPanel;
@@ -24,6 +25,8 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
 
         ValidationGroup group = validationPanel.getValidationGroup();       
         group.add(innerPanel.spreaderField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());
+        group.add(innerPanel.periodField, Validators.REQUIRE_NON_EMPTY_STRING, new IntegerIntervalValidator(2, 2000));
+        group.add(innerPanel.fillingFactorField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());
 
         return validationPanel;
     }
@@ -38,6 +41,9 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
     private void initComponents() {
 
         buttonGroup1 = new javax.swing.ButtonGroup();
+        buttonGroup2 = new javax.swing.ButtonGroup();
+        buttonGroup3 = new javax.swing.ButtonGroup();
+        buttonGroup4 = new javax.swing.ButtonGroup();
         header = new org.jdesktop.swingx.JXHeader();
         labelRandomize4 = new javax.swing.JLabel();
         checkDegree = new javax.swing.JCheckBox();
@@ -55,6 +61,31 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkKShell = new javax.swing.JCheckBox();
         labelRandomize5 = new javax.swing.JLabel();
         spreaderField = new javax.swing.JTextField();
+        checkSR1e4 = new javax.swing.JCheckBox();
+        checkSR3e4 = new javax.swing.JCheckBox();
+        checkSR1e3 = new javax.swing.JCheckBox();
+        checkSR3e3 = new javax.swing.JCheckBox();
+        checkSR1e2 = new javax.swing.JCheckBox();
+        checkSR3e2 = new javax.swing.JCheckBox();
+        checkSR1e1 = new javax.swing.JCheckBox();
+        checkSR3e1 = new javax.swing.JCheckBox();
+        labelRandomize6 = new javax.swing.JLabel();
+        periodField = new javax.swing.JTextField();
+        checkFill20 = new javax.swing.JCheckBox();
+        checkPeriod50 = new javax.swing.JCheckBox();
+        checkPeriod100 = new javax.swing.JCheckBox();
+        checkPeriod200 = new javax.swing.JCheckBox();
+        checkPeriod500 = new javax.swing.JCheckBox();
+        checkPeriod1000 = new javax.swing.JCheckBox();
+        labelRandomize7 = new javax.swing.JLabel();
+        fillingFactorField = new javax.swing.JTextField();
+        checkPeriod20 = new javax.swing.JCheckBox();
+        checkFill40 = new javax.swing.JCheckBox();
+        checkFill60 = new javax.swing.JCheckBox();
+        checkFill100 = new javax.swing.JCheckBox();
+        checkFill80 = new javax.swing.JCheckBox();
+        checkPeriod2000 = new javax.swing.JCheckBox();
+        checkPeriod10 = new javax.swing.JCheckBox();
 
         setForeground(new java.awt.Color(51, 51, 255));
 
@@ -66,7 +97,6 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         labelRandomize4.setForeground(new java.awt.Color(102, 102, 102));
 
         buttonGroup1.add(checkDegree);
-        checkDegree.setSelected(true);
         checkDegree.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkDegree.text")); // NOI18N
 
         buttonGroup1.add(checkBtw);
@@ -120,6 +150,87 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
 
         spreaderField.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.spreaderField.text")); // NOI18N
 
+        buttonGroup2.add(checkSR1e4);
+        checkSR1e4.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR1e4.text")); // NOI18N
+
+        buttonGroup2.add(checkSR3e4);
+        checkSR3e4.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR3e4.text")); // NOI18N
+
+        buttonGroup2.add(checkSR1e3);
+        checkSR1e3.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR1e3.text")); // NOI18N
+
+        buttonGroup2.add(checkSR3e3);
+        checkSR3e3.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR3e3.text")); // NOI18N
+
+        buttonGroup2.add(checkSR1e2);
+        checkSR1e2.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR1e2.text")); // NOI18N
+
+        buttonGroup2.add(checkSR3e2);
+        checkSR3e2.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR3e2.text")); // NOI18N
+
+        buttonGroup2.add(checkSR1e1);
+        checkSR1e1.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR1e1.text")); // NOI18N
+
+        buttonGroup2.add(checkSR3e1);
+        checkSR3e1.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR3e1.text")); // NOI18N
+
+        labelRandomize6.setFont(labelRandomize6.getFont().deriveFont(labelRandomize6.getFont().getSize()-1f));
+        labelRandomize6.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.labelRandomize6.text")); // NOI18N
+        labelRandomize6.setForeground(new java.awt.Color(102, 102, 102));
+
+        periodField.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.periodField.text")); // NOI18N
+
+        buttonGroup4.add(checkFill20);
+        checkFill20.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkFill20.text")); // NOI18N
+
+        buttonGroup3.add(checkPeriod50);
+        checkPeriod50.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod50.text")); // NOI18N
+
+        buttonGroup3.add(checkPeriod100);
+        checkPeriod100.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod100.text")); // NOI18N
+
+        buttonGroup3.add(checkPeriod200);
+        checkPeriod200.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod200.text")); // NOI18N
+
+        buttonGroup3.add(checkPeriod500);
+        checkPeriod500.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod500.text")); // NOI18N
+
+        buttonGroup3.add(checkPeriod1000);
+        checkPeriod1000.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod1000.text")); // NOI18N
+
+        labelRandomize7.setFont(labelRandomize7.getFont().deriveFont(labelRandomize7.getFont().getSize()-1f));
+        labelRandomize7.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.labelRandomize7.text")); // NOI18N
+        labelRandomize7.setForeground(new java.awt.Color(102, 102, 102));
+
+        fillingFactorField.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.fillingFactorField.text")); // NOI18N
+
+        buttonGroup3.add(checkPeriod20);
+        checkPeriod20.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod20.text")); // NOI18N
+
+        buttonGroup4.add(checkFill40);
+        checkFill40.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkFill40.text")); // NOI18N
+
+        buttonGroup4.add(checkFill60);
+        checkFill60.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkFill60.text")); // NOI18N
+
+        buttonGroup4.add(checkFill100);
+        checkFill100.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkFill100.text")); // NOI18N
+
+        buttonGroup4.add(checkFill80);
+        checkFill80.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkFill80.text")); // NOI18N
+
+        buttonGroup3.add(checkPeriod2000);
+        checkPeriod2000.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod2000.text")); // NOI18N
+        checkPeriod2000.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                checkPeriod2000ActionPerformed(evt);
+            }
+        });
+
+        buttonGroup3.add(checkPeriod10);
+        checkPeriod10.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod10.text")); // NOI18N
+        checkPeriod10.setActionCommand(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod10.actionCommand")); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -153,7 +264,63 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                         .addComponent(labelRandomize5, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(spreaderField, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
-                        .addGap(263, 263, 263))))
+                        .addGap(263, 263, 263))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(checkFill40)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkFill80))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(labelRandomize6, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(periodField, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(checkSR3e4)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkSR3e3)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkSR3e2)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkSR3e1))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(checkSR1e4)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkSR1e3)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkSR1e2)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkSR1e1))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(checkFill20)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkFill60)
+                                .addGap(18, 18, 18)
+                                .addComponent(checkFill100))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(checkPeriod20)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(checkPeriod100)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(checkPeriod500))
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addGroup(layout.createSequentialGroup()
+                                            .addComponent(labelRandomize7, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                            .addComponent(fillingFactorField, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                            .addComponent(checkPeriod50)
+                                            .addGap(18, 18, 18)
+                                            .addComponent(checkPeriod200)
+                                            .addGap(18, 18, 18)
+                                            .addComponent(checkPeriod1000))))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(checkPeriod2000)
+                                    .addComponent(checkPeriod10))))
+                        .addGap(0, 0, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -193,12 +360,62 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(labelRandomize5)
                     .addComponent(spreaderField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(18, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(checkSR1e4)
+                    .addComponent(checkSR1e3)
+                    .addComponent(checkSR1e2)
+                    .addComponent(checkSR1e1))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(checkSR3e4)
+                    .addComponent(checkSR3e3)
+                    .addComponent(checkSR3e2)
+                    .addComponent(checkSR3e1))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelRandomize6)
+                    .addComponent(periodField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(checkPeriod100)
+                    .addComponent(checkPeriod500)
+                    .addComponent(checkPeriod20)
+                    .addComponent(checkPeriod2000))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(checkPeriod50)
+                    .addComponent(checkPeriod200)
+                    .addComponent(checkPeriod1000)
+                    .addComponent(checkPeriod10))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelRandomize7)
+                    .addComponent(fillingFactorField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(checkFill20)
+                    .addComponent(checkFill60)
+                    .addComponent(checkFill100))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(checkFill40)
+                    .addComponent(checkFill80))
+                .addContainerGap(16, Short.MAX_VALUE))
         );
+
+        checkPeriod10.getAccessibleContext().setAccessibleName(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod10.AccessibleContext.accessibleName")); // NOI18N
     }// </editor-fold>//GEN-END:initComponents
+
+    private void checkPeriod2000ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_checkPeriod2000ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_checkPeriod2000ActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
+    private javax.swing.ButtonGroup buttonGroup2;
+    private javax.swing.ButtonGroup buttonGroup3;
+    private javax.swing.ButtonGroup buttonGroup4;
     protected javax.swing.JCheckBox checkBDInfluence;
     protected javax.swing.JCheckBox checkBDPower;
     protected javax.swing.JCheckBox checkBtw;
@@ -206,15 +423,40 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
     protected javax.swing.JCheckBox checkClusterRank;
     protected javax.swing.JCheckBox checkDegree;
     protected javax.swing.JCheckBox checkEigen;
+    protected javax.swing.JCheckBox checkFill100;
+    protected javax.swing.JCheckBox checkFill20;
+    protected javax.swing.JCheckBox checkFill40;
+    protected javax.swing.JCheckBox checkFill60;
+    protected javax.swing.JCheckBox checkFill80;
     protected javax.swing.JCheckBox checkHirschIndex;
     protected javax.swing.JCheckBox checkHits;
     protected javax.swing.JCheckBox checkKShell;
     protected javax.swing.JCheckBox checkLeaderRank;
     protected javax.swing.JCheckBox checkLocalCentrality;
     protected javax.swing.JCheckBox checkPageRank;
+    protected javax.swing.JCheckBox checkPeriod10;
+    protected javax.swing.JCheckBox checkPeriod100;
+    protected javax.swing.JCheckBox checkPeriod1000;
+    protected javax.swing.JCheckBox checkPeriod20;
+    protected javax.swing.JCheckBox checkPeriod200;
+    protected javax.swing.JCheckBox checkPeriod2000;
+    protected javax.swing.JCheckBox checkPeriod50;
+    protected javax.swing.JCheckBox checkPeriod500;
+    protected javax.swing.JCheckBox checkSR1e1;
+    protected javax.swing.JCheckBox checkSR1e2;
+    protected javax.swing.JCheckBox checkSR1e3;
+    protected javax.swing.JCheckBox checkSR1e4;
+    protected javax.swing.JCheckBox checkSR3e1;
+    protected javax.swing.JCheckBox checkSR3e2;
+    protected javax.swing.JCheckBox checkSR3e3;
+    protected javax.swing.JCheckBox checkSR3e4;
+    protected javax.swing.JTextField fillingFactorField;
     private org.jdesktop.swingx.JXHeader header;
     private javax.swing.JLabel labelRandomize4;
     private javax.swing.JLabel labelRandomize5;
+    private javax.swing.JLabel labelRandomize6;
+    private javax.swing.JLabel labelRandomize7;
+    protected javax.swing.JTextField periodField;
     protected javax.swing.JTextField spreaderField;
     // End of variables declaration//GEN-END:variables
 }

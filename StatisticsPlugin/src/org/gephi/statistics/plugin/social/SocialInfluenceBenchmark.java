@@ -56,7 +56,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /*
      * Chosen centrality for benchmark
      */
-    private BenchmarkCentrality centrality;
+    private BenchmarkCentrality centrality = BenchmarkCentrality.DEGREE;
     /**
      * The interaction algorithm to be used for the diffusion process
      */
@@ -76,7 +76,15 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Ratio of initial seeders
      */
-    private double pSeeders = 0.0003; // .0001, .0003, .001, .003, .01
+    private double pSeeders = 0.1; // .0001, .0003, .001, .003, .01    
+    /**
+     * Activity period for tolerance deplete model
+     */
+    private int injectPeriod = 200;    
+    /**
+     * Active ratio for tolerance deplete model
+     */
+    private double fillingFactor = 0.6;    
     /**
      * Ratio of population that needs to become recovered
      */
@@ -99,6 +107,14 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         this.pSeeders = pSeeders;
     }
 
+    public void setInjectPeriod(int injectPeriod) {
+        this.injectPeriod = injectPeriod;
+    }
+
+    public void setFillingFactor(double fillingFactor) {
+        this.fillingFactor = fillingFactor;
+    }   
+
     public BenchmarkCentrality getCentrality() {
         return centrality;
     }
@@ -107,6 +123,14 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         return pSeeders;
     }
 
+    public int getInjectPeriod() {
+        return injectPeriod;
+    }
+
+    public double getFillingFactor() {
+        return fillingFactor;
+    }
+       
     private Integer getDegree(Node node) {
         return (Integer) node.getAttributes().getValue(Degree.DEGREE);
     }
@@ -221,8 +245,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // 2) sort nodes by centrality
         //      
 
-        //sortRandom(nodes);
-        sortByCentrality(nodes, centralityTag);
+        sortRandom(nodes);
+        //sortByCentrality(nodes, centralityTag);
 
         //
         // 3) infect top pSeeders% nodes
@@ -568,12 +592,9 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // reactivation interval for nodes
         final int minSleep = 1, maxSleep = 10;
         // tolerance modifications ratio after each interaction	 
-        final float epsilon0 = 0.001f, epsilon1 = 0.01f;
+        //final float epsilon0 = 0.001f, epsilon1 = 0.01f;
         // opinion modifications ratio after each interaction	 
-        final float omega0 = 0.155f, omega1 = 0.151f;
-        // period and fill factor
-        final int INJECT_PERIOD = 200;
-        final float FILLING_FACTOR = 1f; // i.e, will be active the first 50 iterations of a 100 period        
+        final float omega0 = 0.155f, omega1 = 0.151f;                
 
         final Map<Node, ExtraNodeData> nodeDataMap = new HashMap<Node, ExtraNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
@@ -603,12 +624,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // long-term stop condition (2k)
         while (iteration < MAX_ITERATIONS) {
             // stubborn agents activation            
-            if ((iteration - (int) (INJECT_PERIOD * FILLING_FACTOR)) % (int) (INJECT_PERIOD) == 0) { // set inactive and let opinion drop
+            if ((iteration - (int) (injectPeriod * fillingFactor)) % (int) (injectPeriod) == 0) { // set inactive and let opinion drop
                 for (Node node : stubbornAgents) {
                     nodeDataMap.get(node).isStubborn = false; // deactivate stubborn agents
                 }
             }
-            if (iteration % (int) (INJECT_PERIOD) == 0) { // set active & opinion = 1
+            if (iteration % (int) (injectPeriod) == 0) { // set active & opinion = 1
                 for (Node node : stubbornAgents) {
                     nodeDataMap.get(node).isStubborn = true; // activate stubborn agents
                     nodeDataMap.get(node).opinion = 1f;
@@ -622,7 +643,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 if (nodeData.isStubborn) {
                     // just ignore them, stubborn agents do not change at all
                 } else {
-                    // if has slept enough
+                    // if node has slept enough
                     if (nodeData.sleep <= 0) {
                         // get list of neighbours
                         neighbours = graph.getNeighbors(node).toArray();
@@ -660,10 +681,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                             //row.setValue(deltaCol, nodeData.opinion);                          
 
                         } // node has neighbours
+                        //nodeData.sleep = getRandomSleep(rand, minSleep, maxSleep);
                     }// end node is not sleeping
-
-                    nodeData.sleep--; // decrease sleep
-
+                    else { // node is just sleeping
+                        nodeData.sleep--; // decrease sleep
+                    }
                 } // end node change state
             } // end one iteration
 

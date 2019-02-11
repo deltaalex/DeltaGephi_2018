@@ -30,12 +30,9 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
         this.socialInfluence = (SocialInfluenceBenchmark) statistics;
         if (panel != null) {
             BenchmarkCentrality centrality = socialInfluence.getCentrality();
-
-            panel.spreaderField.setText(String.valueOf(socialInfluence.getSeeders()));
-            if (centrality == null) {
-                panel.checkDegree.setSelected(true);
-                return;
-            }
+            double pSeeders = socialInfluence.getSeeders();
+            int period = socialInfluence.getInjectPeriod();
+            double fillingFactor = socialInfluence.getFillingFactor();
 
             panel.checkDegree.setSelected(centrality.equals(BenchmarkCentrality.DEGREE));
             panel.checkBtw.setSelected(centrality.equals(BenchmarkCentrality.BETWEENNESS));
@@ -51,13 +48,43 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             panel.checkClusterRank.setSelected(centrality.equals(BenchmarkCentrality.CLUSTERRANK));
             panel.checkLeaderRank.setSelected(centrality.equals(BenchmarkCentrality.LEADERRANK));
             panel.checkLocalCentrality.setSelected(centrality.equals(BenchmarkCentrality.LOCALCENTRALITY));
-            panel.checkKShell.setSelected(centrality.equals(BenchmarkCentrality.KSHELL));                        
+            panel.checkKShell.setSelected(centrality.equals(BenchmarkCentrality.KSHELL));
+
+            panel.spreaderField.setText(String.valueOf(pSeeders));
+            panel.checkSR1e4.setSelected(pSeeders == 0.0001);
+            panel.checkSR3e4.setSelected(pSeeders == 0.0003);
+            panel.checkSR1e3.setSelected(pSeeders == 0.001);
+            panel.checkSR3e3.setSelected(pSeeders == 0.003);
+            panel.checkSR1e2.setSelected(pSeeders == 0.01);
+            panel.checkSR3e2.setSelected(pSeeders == 0.03);
+            panel.checkSR1e1.setSelected(pSeeders == 0.1);
+            panel.checkSR3e1.setSelected(pSeeders == 0.3);
+
+            panel.periodField.setText(String.valueOf(period));
+            panel.checkPeriod10.setSelected(period == 10);
+            panel.checkPeriod20.setSelected(period == 20);
+            panel.checkPeriod50.setSelected(period == 50);
+            panel.checkPeriod100.setSelected(period == 100);
+            panel.checkPeriod200.setSelected(period == 200);
+            panel.checkPeriod500.setSelected(period == 500);
+            panel.checkPeriod1000.setSelected(period == 1000);
+            panel.checkPeriod2000.setSelected(period == 2000);
+
+            panel.fillingFactorField.setText(String.valueOf(fillingFactor));
+            panel.checkFill20.setSelected(fillingFactor == 0.2);
+            panel.checkFill40.setSelected(fillingFactor == 0.4);
+            panel.checkFill60.setSelected(fillingFactor == 0.6);
+            panel.checkFill80.setSelected(fillingFactor == 0.8);
+            panel.checkFill100.setSelected(fillingFactor == 1.0);
         }
     }
 
     public void unsetup() {
         if (panel != null) {
             BenchmarkCentrality centrality = BenchmarkCentrality.DEGREE;
+            double pSeeders = Double.parseDouble(panel.spreaderField.getText());
+            int period = Integer.parseInt(panel.periodField.getText());
+            double fillingFactor = Double.parseDouble(panel.fillingFactorField.getText());
 
             if (panel.checkDegree.isSelected()) {
                 centrality = BenchmarkCentrality.DEGREE;
@@ -85,7 +112,7 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             }
             if (panel.checkHirschIndex.isSelected()) {
                 centrality = BenchmarkCentrality.HINDEX;
-            }            
+            }
             if (panel.checkClusterRank.isSelected()) {
                 centrality = BenchmarkCentrality.CLUSTERRANK;
             }
@@ -98,9 +125,77 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             if (panel.checkKShell.isSelected()) {
                 centrality = BenchmarkCentrality.KSHELL;
             }
-                        
+
+            if (panel.checkSR1e4.isSelected()) {
+                pSeeders = 0.0001;
+            }
+            if (panel.checkSR3e4.isSelected()) {
+                pSeeders = 0.0003;
+            }
+            if (panel.checkSR1e3.isSelected()) {
+                pSeeders = 0.001;
+            }
+            if (panel.checkSR3e3.isSelected()) {
+                pSeeders = 0.003;
+            }
+            if (panel.checkSR1e2.isSelected()) {
+                pSeeders = 0.01;
+            }
+            if (panel.checkSR3e2.isSelected()) {
+                pSeeders = 0.03;
+            }
+            if (panel.checkSR1e1.isSelected()) {
+                pSeeders = 0.1;
+            }
+            if (panel.checkSR3e1.isSelected()) {
+                pSeeders = 0.3;
+            }
+
+            if (panel.checkPeriod10.isSelected()) {
+                period = 10;
+            }
+            if (panel.checkPeriod20.isSelected()) {
+                period = 20;
+            }
+            if (panel.checkPeriod50.isSelected()) {
+                period = 50;
+            }
+            if (panel.checkPeriod100.isSelected()) {
+                period = 100;
+            }
+            if (panel.checkPeriod200.isSelected()) {
+                period = 200;
+            }
+            if (panel.checkPeriod500.isSelected()) {
+                period = 500;
+            }
+            if (panel.checkPeriod1000.isSelected()) {
+                period = 1000;
+            }
+            if (panel.checkPeriod2000.isSelected()) {
+                period = 2000;
+            }
+
+            if (panel.checkFill20.isSelected()) {
+                fillingFactor = 0.2;
+            }
+            if (panel.checkFill40.isSelected()) {
+                fillingFactor = 0.4;
+            }
+            if (panel.checkFill60.isSelected()) {
+                fillingFactor = 0.6;
+            }
+            if (panel.checkFill80.isSelected()) {
+                fillingFactor = 0.8;
+            }
+            if (panel.checkFill100.isSelected()) {
+                fillingFactor = 1.0;
+            }
+
             socialInfluence.setCentrality(centrality);
-            socialInfluence.setSeeders(Double.parseDouble(panel.spreaderField.getText()));
+            socialInfluence.setSeeders(pSeeders);
+            socialInfluence.setInjectPeriod(period);
+            socialInfluence.setFillingFactor(fillingFactor);
         }
         socialInfluence = null;
         panel = null;
