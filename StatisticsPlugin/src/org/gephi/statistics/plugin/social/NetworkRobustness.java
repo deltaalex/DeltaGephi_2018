@@ -45,12 +45,12 @@ public class NetworkRobustness implements Statistics, LongTask {
      * Defines type of attack on edges: either by picking random edges, or based
      * on adjacent node centrality.
      */
-    private ATTACK_TYPE attackType = ATTACK_TYPE.RANDOM;
+    private ATTACK_TYPE attackType = ATTACK_TYPE.DEGREE;
     /**
      * Defines repair strategy for adding new edges to: random nodes, or based
      * on highest degree/btw, or lowest degree/btw first.
      */
-    private REPAIR_TYPE repairType = REPAIR_TYPE.RANDOM;
+    private REPAIR_TYPE repairType = REPAIR_TYPE.HIGHEST_DEGREE_FIRST;
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -75,7 +75,7 @@ public class NetworkRobustness implements Statistics, LongTask {
      * Percentage of recreated edges, based on the number of removed edges, per
      * iteration
      */
-    private double repairRatio = 0.25;
+    private double repairRatio = 1.0;
     private Random rand;
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">         
@@ -229,6 +229,10 @@ public class NetworkRobustness implements Statistics, LongTask {
                 pw.println(edgesToRemove.size() + "," + gcSize + "," + numComponents);
 
 //                if (1.0 * gcSize / nodes.size() < 0.25) // debug destroy networks down to GC = 25%N
+//                {
+//                    break;
+//                }
+//                if (1.0 * numComponents > 100) // debug destroy networks up to numCC = 100
 //                {
 //                    break;
 //                }
