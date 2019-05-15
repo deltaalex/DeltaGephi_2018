@@ -131,7 +131,7 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
 
         lBeta2.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lBeta2.text")); // NOI18N
 
-        repairCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Random", "Highest Degree First", "Highest Betweenness First", "Lowest Degree First", "Lowest Betweenness First", "None", " " }));
+        repairCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Random", "Degree (HDF)", "Betweenness (HBF)", "Eigenvector (HEF)", "Lowest Degree First", "Lowest Betweenness First", "Lowest Eigenvector First", "None", " " }));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);

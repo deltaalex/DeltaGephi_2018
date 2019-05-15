@@ -22,6 +22,7 @@ import org.gephi.statistics.plugin.ConnectedComponents;
 import org.gephi.statistics.plugin.Degree;
 import org.gephi.statistics.plugin.EigenvectorCentrality;
 import org.gephi.statistics.plugin.GraphDistance;
+import org.gephi.statistics.plugin.PageRank;
 import org.gephi.statistics.spi.Statistics;
 import org.gephi.utils.longtask.spi.LongTask;
 import org.gephi.utils.progress.Progress;
@@ -45,12 +46,12 @@ public class NetworkRobustness implements Statistics, LongTask {
      * Defines type of attack on edges: either by picking random edges, or based
      * on adjacent node centrality.
      */
-    private ATTACK_TYPE attackType = ATTACK_TYPE.DEGREE;
+    private ATTACK_TYPE attackType = ATTACK_TYPE.RANDOM;
     /**
      * Defines repair strategy for adding new edges to: random nodes, or based
      * on highest degree/btw, or lowest degree/btw first.
      */
-    private REPAIR_TYPE repairType = REPAIR_TYPE.HIGHEST_DEGREE_FIRST;
+    private REPAIR_TYPE repairType = REPAIR_TYPE.HIGHEST_BETWEENNESS_FIRST;
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -75,7 +76,7 @@ public class NetworkRobustness implements Statistics, LongTask {
      * Percentage of recreated edges, based on the number of removed edges, per
      * iteration
      */
-    private double repairRatio = 1.0;
+    private double repairRatio = 0.5;
     private Random rand;
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">         
@@ -188,11 +189,17 @@ public class NetworkRobustness implements Statistics, LongTask {
                     case HIGHEST_BETWEENNESS_FIRST:
                         affectedNodes = pickNodesByBetweenness(affectedNodes, (int) (edgesToRemove.size() * repairRatio), true);
                         break;
+                    case HIGHEST_EIGENVECTOR_FIRST:
+                        affectedNodes = pickNodesByEigenvector(affectedNodes, (int) (edgesToRemove.size() * repairRatio), true);
+                        break;
                     case LOWEST_DEGREE_FIRST:
                         affectedNodes = pickNodesByDegree(affectedNodes, (int) (edgesToRemove.size() * repairRatio), false);
                         break;
                     case LOWEST_BETWEENNESS_FIRST:
                         affectedNodes = pickNodesByBetweenness(affectedNodes, (int) (edgesToRemove.size() * repairRatio), false);
+                        break;
+                    case LOWEST_EIGENVECTOR_FIRST:
+                        affectedNodes = pickNodesByEigenvector(affectedNodes, (int) (edgesToRemove.size() * repairRatio), false);
                         break;
                     case NONE:
                         break;
@@ -239,8 +246,10 @@ public class NetworkRobustness implements Statistics, LongTask {
             }
 
             pw.close();
+            
+            Runtime.getRuntime().exec("cmd /c start " + tmp.getAbsolutePath());            
             //tmp.deleteOnExit(); // no-log on desktop
-        } catch (FileNotFoundException ex) {
+        } catch (Exception ex) {
             Exceptions.printStackTrace(ex);
         }
 
@@ -317,6 +326,30 @@ public class NetworkRobustness implements Statistics, LongTask {
                 } else {
                     return +1 * ((Double) (n1.getAttributes().getValue(GraphDistance.BETWEENNESS)))
                             .compareTo((Double) (n2.getAttributes().getValue(GraphDistance.BETWEENNESS)));
+                }
+            }
+        });
+
+        // add first nodes to affected list
+        for (int i = 0; i < nodesToKeep && i < nodes.size(); ++i) {
+            affectedNodes.add(nodes.get(i));
+        }
+
+        return affectedNodes;
+    }
+
+    private List<Node> pickNodesByEigenvector(List<Node> nodes, int nodesToKeep, final boolean highEigenvectorFirst) {
+        List<Node> affectedNodes = new ArrayList<Node>();
+
+        Collections.sort(nodes, new Comparator<Node>() {
+            // sort by node degree
+            public int compare(Node n1, Node n2) {
+                if (highEigenvectorFirst) {
+                    return -1 * ((Double) (n1.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR)))
+                            .compareTo((Double) (n2.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR)));
+                } else {
+                    return +1 * ((Double) (n1.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR)))
+                            .compareTo((Double) (n2.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR)));
                 }
             }
         });
@@ -580,12 +613,14 @@ public class NetworkRobustness implements Statistics, LongTask {
 
     public enum ATTACK_TYPE {
 
-        RANDOM, DEGREE, BETWEENNESS, EIGENVECTOR, CLUSTERING, PAGERANK, HITS
+        RANDOM, DEGREE, BETWEENNESS, EIGENVECTOR, CLUSTERING/*, PAGERANK, HITS*/
+
     }
 
     public enum REPAIR_TYPE {
 
-        RANDOM, HIGHEST_DEGREE_FIRST, HIGHEST_BETWEENNESS_FIRST, LOWEST_DEGREE_FIRST, LOWEST_BETWEENNESS_FIRST, NONE
+        RANDOM, HIGHEST_DEGREE_FIRST, HIGHEST_BETWEENNESS_FIRST, HIGHEST_EIGENVECTOR_FIRST,
+        LOWEST_DEGREE_FIRST, LOWEST_BETWEENNESS_FIRST, LOWEST_EIGENVECTOR_FIRST, NONE
     }
 // </editor-fold>
 }
