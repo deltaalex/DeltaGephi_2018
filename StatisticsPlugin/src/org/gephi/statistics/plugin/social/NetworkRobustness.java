@@ -51,7 +51,7 @@ public class NetworkRobustness implements Statistics, LongTask {
      * Defines repair strategy for adding new edges to: random nodes, or based
      * on highest degree/btw, or lowest degree/btw first.
      */
-    private REPAIR_TYPE repairType = REPAIR_TYPE.HIGHEST_BETWEENNESS_FIRST;
+    private REPAIR_TYPE repairType = REPAIR_TYPE.RANDOM;
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -76,7 +76,7 @@ public class NetworkRobustness implements Statistics, LongTask {
      * Percentage of recreated edges, based on the number of removed edges, per
      * iteration
      */
-    private double repairRatio = 0.5;
+    private double repairRatio = 0.7;
     private Random rand;
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">         
@@ -156,11 +156,11 @@ public class NetworkRobustness implements Statistics, LongTask {
         try {
             File tmp = new File(System.getProperty("user.home") + "/Desktop/robustness.csv");
             PrintWriter pw = new PrintWriter(tmp);
-            pw.println("removedEdges,gcSize,numCC");
+            pw.println("removedEdges,gcSize,numCC,M-R,costAbs,costNorm,M-R/costNorm");
 
             for (int t = 0; t < maxIterations; ++t) {
 
-                // 1) attack
+                // 1) attack (remove edges)
 
                 switch (attackType) {
                     case RANDOM:
@@ -177,7 +177,7 @@ public class NetworkRobustness implements Statistics, LongTask {
                     graph.removeEdge(edge);
                 }
 
-                // 2) repair
+                // 2) repair (add edges)
 
                 switch (repairType) {
                     case RANDOM:
@@ -205,14 +205,19 @@ public class NetworkRobustness implements Statistics, LongTask {
                         break;
                 }
 
+                // cumulated (&normalized) degree of target nodes that recieve new edges
+                double repairCost = 0.0, repairCost2 = 0.0;
+
                 // add one edge to each affected node
                 if (!repairType.equals(REPAIR_TYPE.NONE)) {
                     switch (attackType) {
                         case RANDOM:
-                            addNewEdgesAtRandom(graph, nodes, affectedNodes);
+                            repairCost += addNewEdgesAtRandom(graph, nodes, affectedNodes);
+                            repairCost2 += (repairCost / affectedNodes.size());
                             break;
                         default:
-                            addNewEdgesByCentrality(graph, nodes, affectedNodes);
+                            repairCost += addNewEdgesByCentrality(graph, nodes, affectedNodes);
+                            repairCost2 += (repairCost / affectedNodes.size());
                             break;
                     }
                 }
@@ -224,16 +229,34 @@ public class NetworkRobustness implements Statistics, LongTask {
                 // count components
                 int numComponents = components.getConnectedComponentsCount();
                 int gcIndex = components.getGiantComponent();
-                int gcSize = 0;
-                for (Node node : graph.getNodes()) {
-                    if ((Integer) node.getAttributes().getValue(ConnectedComponents.WEAKLY) == gcIndex) {
-                        gcSize++;
+                int[] componentSizes = components.getComponentsSize();
+                //int gcSize = 0;
+//                for (Node node : graph.getNodes()) {
+//                    if ((Integer) node.getAttributes().getValue(ConnectedComponents.WEAKLY) == gcIndex) {
+//                        gcSize++;
+//                    }
+//                }
+                int gcSize = componentSizes[gcIndex];
+
+                // compute molloy-reed parameter: <k^2> / <k>
+                int ki = 0, ki2 = 0;
+                double sumKi = 0, sumKi2 = 0;
+                for (Node node : graph.getNodes()) { // for all nodes
+                    ki = graph.getDegree(node); // degree of current node
+                    ki2 = 0; // cumulated degree of vecinity
+                    for (Node node2 : graph.getNeighbors(node)) { // for each neighbour
+                        ki2 += graph.getDegree(node2); // degree of neighbor of current node
                     }
+                    sumKi += ki;
+                    sumKi2 += ki2;
                 }
+                sumKi /= graph.getNodeCount();
+                sumKi2 /= graph.getNodeCount();
+                double molloyReed = sumKi2 / sumKi;
 
                 //errorReport += edgesToRemove.size() /*+ " [" + (1.0 * edgesToRemove.size() / graph.getTotalEdgeCount()) + "]\n"*/ + "\n";
                 errorReport += gcSize + "\n";
-                pw.println(edgesToRemove.size() + "," + gcSize + "," + numComponents);
+                pw.println(edgesToRemove.size() + "," + gcSize + "," + numComponents + "," + molloyReed + "," + repairCost + "," + repairCost2 + "," + molloyReed / repairCost2);
 
 //                if (1.0 * gcSize / nodes.size() < 0.25) // debug destroy networks down to GC = 25%N
 //                {
@@ -246,8 +269,8 @@ public class NetworkRobustness implements Statistics, LongTask {
             }
 
             pw.close();
-            
-            Runtime.getRuntime().exec("cmd /c start " + tmp.getAbsolutePath());            
+
+            Runtime.getRuntime().exec("cmd /c start " + tmp.getAbsolutePath());
             //tmp.deleteOnExit(); // no-log on desktop
         } catch (Exception ex) {
             Exceptions.printStackTrace(ex);
@@ -469,8 +492,13 @@ public class NetworkRobustness implements Statistics, LongTask {
         return cc;
     }
 
-    private void addNewEdgesAtRandom(HierarchicalGraph graph, List<Node> allNodes, List<Node> affectedNodes) {
+    /**
+     * Adds one new edge from every affectedNode to another random node in the
+     * graph (no self loops, no duplicate edges)
+     */
+    private int addNewEdgesAtRandom(HierarchicalGraph graph, List<Node> allNodes, List<Node> affectedNodes) {
         Node otherNode;
+        int repairCost = 0;
 
         // add random edge for each affected node
         for (Node node : affectedNodes) {
@@ -483,12 +511,20 @@ public class NetworkRobustness implements Statistics, LongTask {
 
             // create new edge            
             graph.addEdge(graph.getGraphModel().factory().newEdge(node, otherNode));
+            repairCost += graph.getDegree(otherNode);  // update cost based on target node degree
         }
+
+        return repairCost;
     }
 
-    private void addNewEdgesByCentrality(HierarchicalGraph graph, List<Node> allNodes, List<Node> affectedNodes) {
+    /**
+     * Adds one new edge from every affectedNode to another preferentially
+     * selected node (given by attackType). No self-loops, no duplicate edges.
+     */
+    private int addNewEdgesByCentrality(HierarchicalGraph graph, List<Node> allNodes, List<Node> affectedNodes) {
         Map<Node, ExtraEdgeData> map = new HashMap<Node, ExtraEdgeData>();
         double fitness = 0, totalFitness = 0.0;
+        int repairCost = 0;
 
         // sort all nodes by descending centrality
         Collections.sort(allNodes, new Comparator<Node>() {
@@ -550,12 +586,15 @@ public class NetworkRobustness implements Statistics, LongTask {
                     // create edge
                     if (rand.nextDouble() < map.get(otherNode).fitness / totalFitness) {
                         graph.addEdge(graph.getGraphModel().factory().newEdge(node, otherNode));
+                        repairCost += graph.getDegree(otherNode); // update cost based on target node degree
                         success = true;
                         break;
                     }
                 }
             }
         }
+
+        return repairCost;
     }
     // </editor-fold>   
     // <editor-fold defaultstate="collapsed" desc="Misc Area">
