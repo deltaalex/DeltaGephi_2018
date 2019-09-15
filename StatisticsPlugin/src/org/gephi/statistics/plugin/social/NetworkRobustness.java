@@ -156,7 +156,7 @@ public class NetworkRobustness implements Statistics, LongTask {
         try {
             File tmp = new File(System.getProperty("user.home") + "/Desktop/robustness.csv");
             PrintWriter pw = new PrintWriter(tmp);
-            pw.println("removedEdges,gcSize,numCC,M-R,costAbs,costNorm,M-R/costNorm");
+            pw.println("removedEdges,gcSize,numCC,M-R,costAbs,costNorm,GCS/costAbs,M-R/costNorm");
 
             for (int t = 0; t < maxIterations; ++t) {
 
@@ -206,18 +206,18 @@ public class NetworkRobustness implements Statistics, LongTask {
                 }
 
                 // cumulated (&normalized) degree of target nodes that recieve new edges
-                double repairCost = 0.0, repairCost2 = 0.0;
+                double repairCostAbs = 0.0, repairCostNorm = 0.0;
 
                 // add one edge to each affected node
                 if (!repairType.equals(REPAIR_TYPE.NONE)) {
                     switch (attackType) {
                         case RANDOM:
-                            repairCost += addNewEdgesAtRandom(graph, nodes, affectedNodes);
-                            repairCost2 += (repairCost / affectedNodes.size());
+                            repairCostAbs += addNewEdgesAtRandom(graph, nodes, affectedNodes);
+                            repairCostNorm += (repairCostAbs / affectedNodes.size());
                             break;
                         default:
-                            repairCost += addNewEdgesByCentrality(graph, nodes, affectedNodes);
-                            repairCost2 += (repairCost / affectedNodes.size());
+                            repairCostAbs += addNewEdgesByCentrality(graph, nodes, affectedNodes);
+                            repairCostNorm += (repairCostAbs / affectedNodes.size());
                             break;
                     }
                 }
@@ -256,7 +256,8 @@ public class NetworkRobustness implements Statistics, LongTask {
 
                 //errorReport += edgesToRemove.size() /*+ " [" + (1.0 * edgesToRemove.size() / graph.getTotalEdgeCount()) + "]\n"*/ + "\n";
                 errorReport += gcSize + "\n";
-                pw.println(edgesToRemove.size() + "," + gcSize + "," + numComponents + "," + molloyReed + "," + repairCost + "," + repairCost2 + "," + molloyReed / repairCost2);
+                pw.println(edgesToRemove.size() + "," + gcSize + "," + numComponents + "," + molloyReed + "," + repairCostAbs
+                        + "," + repairCostNorm + "," + gcSize / repairCostAbs + "," + molloyReed / repairCostNorm);
 
 //                if (1.0 * gcSize / nodes.size() < 0.25) // debug destroy networks down to GC = 25%N
 //                {
