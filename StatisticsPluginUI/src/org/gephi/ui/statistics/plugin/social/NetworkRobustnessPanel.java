@@ -127,7 +127,7 @@ public class NetworkRobustnessPanel extends javax.swing.JPanel {
 
         lBeta1.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lBeta1.text")); // NOI18N
 
-        attackCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Random", "Degree", "Betweenness", "Eigenvector", "Clustering coefficient", " " }));
+        attackCombo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Random", "Degree", "Betweenness", "Eigenvector", "Clustering coefficient", "Random rewiring", "Preferential rewiring" }));
 
         lBeta2.setText(org.openide.util.NbBundle.getMessage(NetworkRobustnessPanel.class, "NetworkRobustnessPanel.lBeta2.text")); // NOI18N
 

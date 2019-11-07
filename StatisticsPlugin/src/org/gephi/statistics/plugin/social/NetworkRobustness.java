@@ -46,12 +46,12 @@ public class NetworkRobustness implements Statistics, LongTask {
      * Defines type of attack on edges: either by picking random edges, or based
      * on adjacent node centrality.
      */
-    private ATTACK_TYPE attackType = ATTACK_TYPE.RANDOM;
+    private ATTACK_TYPE attackType = ATTACK_TYPE.PREF_REWIRING;
     /**
      * Defines repair strategy for adding new edges to: random nodes, or based
      * on highest degree/btw, or lowest degree/btw first.
      */
-    private REPAIR_TYPE repairType = REPAIR_TYPE.RANDOM;
+    private REPAIR_TYPE repairType = REPAIR_TYPE.NONE;
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -160,11 +160,22 @@ public class NetworkRobustness implements Statistics, LongTask {
 
             for (int t = 0; t < maxIterations; ++t) {
 
+                // cumulated (&normalized) degree of target nodes that recieve new edges
+                double repairCostAbs = 0.0, repairCostNorm = 0.0;
+
                 // 1) attack (remove edges)
 
                 switch (attackType) {
                     case RANDOM:
                         edgesToRemove = pickEdgesAtRandom(graph, attributeModel);
+                        break;
+                    case RANDOM_REWIRING:
+                        repairCostAbs = rewireAtRandom(graph, nodes);
+                        repairCostNorm = repairCostAbs / (2 * attackRatio * nodes.size());
+                        break;
+                    case PREF_REWIRING:
+                        repairCostAbs = rewirePreferentially(graph, nodes);
+                        repairCostNorm = repairCostAbs / (2 * attackRatio * nodes.size());
                         break;
                     default:
                         edgesToRemove = pickEdgesByCentrality(graph, attributeModel);
@@ -203,10 +214,9 @@ public class NetworkRobustness implements Statistics, LongTask {
                         break;
                     case NONE:
                         break;
+                    default:
+                        break;
                 }
-
-                // cumulated (&normalized) degree of target nodes that recieve new edges
-                double repairCostAbs = 0.0, repairCostNorm = 0.0;
 
                 // add one edge to each affected node
                 if (!repairType.equals(REPAIR_TYPE.NONE)) {
@@ -263,7 +273,7 @@ public class NetworkRobustness implements Statistics, LongTask {
 //                {
 //                    break;
 //                }
-//                if (1.0 * numComponents > 100) // debug destroy networks up to numCC = 100
+//                if (1.0 * numComponents > 200) // debug destroy networks up to numCC = 100
 //                {
 //                    break;
 //                }
@@ -295,6 +305,78 @@ public class NetworkRobustness implements Statistics, LongTask {
         }
 
         return removedEdges;
+    }
+
+    private int rewireAtRandom(HierarchicalGraph graph, List<Node> allNodes) {
+        List<Edge> edgesToRemove = new ArrayList<Edge>();
+        List<Edge> edgesToAdd = new ArrayList<Edge>();
+        double p1, p2;
+        Node node, otherNode;
+        int repairCost = 0;
+
+        for (Edge edge : graph.getEdges()) {
+            p1 = rand.nextDouble();
+            // attack succeded            
+            if (p1 < attackRatio) {
+                edgesToRemove.add(edge);
+                node = edge.getSource();
+
+                p2 = rand.nextDouble();
+                if (p2 < repairRatio) {
+                    // pick new random target                                
+                    otherNode = allNodes.get(rand.nextInt(allNodes.size()));
+                    // avoid self loops and duplicate edges
+                    while (otherNode.equals(node) || graph.isAdjacent(node, otherNode)) {
+                        otherNode = allNodes.get(rand.nextInt(allNodes.size()));
+                    }
+
+                    // create new edge            
+                    edgesToAdd.add(graph.getGraphModel().factory().newEdge(node, otherNode));
+                    repairCost += graph.getDegree(otherNode);  // update cost based on target node degree
+                }
+            }
+        }
+
+        // finally, remove all marked edges and add newly created edges
+        for (Edge edge : edgesToRemove) {
+            graph.removeEdge(edge);
+        }
+        for (Edge edge : edgesToAdd) {
+            graph.addEdge(edge);
+        }
+
+        return repairCost;
+    }
+
+    private int rewirePreferentially(HierarchicalGraph graph, List<Node> allNodes) {
+        List<Edge> edgesToRemove = new ArrayList<Edge>();
+        List<Node> affectedNodes = new ArrayList<Node>();
+        double p1, p2;
+        Node node;
+        int repairCost = 0;
+
+        for (Edge edge : graph.getEdges()) {
+            p1 = rand.nextDouble();
+            // attack succeded            
+            if (p1 < attackRatio) {
+                edgesToRemove.add(edge);
+                node = edge.getSource();
+
+                p2 = rand.nextDouble();
+                if (p2 < repairRatio) {
+                    affectedNodes.add(node);
+                }
+            }
+        }
+
+        // finally, remove all marked edges and add newly created edges
+        for (Edge edge : edgesToRemove) {
+            graph.removeEdge(edge);
+        }
+
+        repairCost += addNewEdgesByCentrality(graph, allNodes, affectedNodes);
+
+        return repairCost;
     }
 
     private List<Node> pickNodesAtRandom(List<Node> nodes, int nodesToKeep) {
@@ -543,6 +625,9 @@ public class NetworkRobustness implements Statistics, LongTask {
                     case EIGENVECTOR:
                         return -1 * ((Double) (n1.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR)))
                                 .compareTo(((Double) (n2.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR))));
+                    case PREF_REWIRING:
+                        return -1 * ((Integer) (n1.getAttributes().getValue(Degree.DEGREE)))
+                                .compareTo(((Integer) (n2.getAttributes().getValue(Degree.DEGREE))));
                     default:
                         return 0;
                 }
@@ -563,6 +648,9 @@ public class NetworkRobustness implements Statistics, LongTask {
                     break;
                 case EIGENVECTOR:
                     fitness = (Double) node.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR);
+                    break;
+                case PREF_REWIRING:
+                    fitness = (Integer) node.getAttributes().getValue(Degree.DEGREE) + 0.0;
                     break;
             }
 
@@ -653,8 +741,7 @@ public class NetworkRobustness implements Statistics, LongTask {
 
     public enum ATTACK_TYPE {
 
-        RANDOM, DEGREE, BETWEENNESS, EIGENVECTOR, CLUSTERING/*, PAGERANK, HITS*/
-
+        RANDOM, DEGREE, BETWEENNESS, EIGENVECTOR, CLUSTERING/*, PAGERANK, HITS*/, RANDOM_REWIRING, PREF_REWIRING
     }
 
     public enum REPAIR_TYPE {
