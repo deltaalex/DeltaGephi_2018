@@ -46,12 +46,12 @@ public class NetworkRobustness implements Statistics, LongTask {
      * Defines type of attack on edges: either by picking random edges, or based
      * on adjacent node centrality.
      */
-    private ATTACK_TYPE attackType = ATTACK_TYPE.PREF_REWIRING;
+    private ATTACK_TYPE attackType = ATTACK_TYPE.BETWEENNESS;
     /**
      * Defines repair strategy for adding new edges to: random nodes, or based
      * on highest degree/btw, or lowest degree/btw first.
      */
-    private REPAIR_TYPE repairType = REPAIR_TYPE.NONE;
+    private REPAIR_TYPE repairType = REPAIR_TYPE.HIGHEST_BETWEENNESS_FIRST;
     /**
      * Remembers if the Cancel function has been called.
      */
@@ -157,8 +157,14 @@ public class NetworkRobustness implements Statistics, LongTask {
             File tmp = new File(System.getProperty("user.home") + "/Desktop/robustness.csv");
             PrintWriter pw = new PrintWriter(tmp);
             pw.println("removedEdges,gcSize,numCC,M-R,costAbs,costNorm,GCS/costAbs,M-R/costNorm");
+            long time = System.currentTimeMillis();
 
             for (int t = 0; t < maxIterations; ++t) {
+
+                // run BTW once every K iterations
+//                if (t % 15 == 0) {
+//                    runBetweenness(graph, attributeModel);
+//                }
 
                 // cumulated (&normalized) degree of target nodes that recieve new edges
                 double repairCostAbs = 0.0, repairCostNorm = 0.0;
@@ -278,6 +284,8 @@ public class NetworkRobustness implements Statistics, LongTask {
 //                    break;
 //                }
             }
+            time = System.currentTimeMillis()-time;
+            //pw.println("Runtime (s): " + (time/1000.0));
 
             pw.close();
 
@@ -573,6 +581,16 @@ public class NetworkRobustness implements Statistics, LongTask {
         cc.setProgressTicket(progress);
         cc.execute(graph.getGraphModel(), attributeModel);
         return cc;
+    }
+
+    private void runBetweenness(HierarchicalGraph graph, AttributeModel attributeModel) {
+        // betweenness, closeness, bdpower, bdinfluence
+        GraphDistance distance = new GraphDistance();
+        distance.setNormalized(true);
+        distance.setDirected(false);
+        distance.setProgressTicket(progress);
+        distance.execute(graph.getGraphModel(), attributeModel);
+        distance.getPathLength();
     }
 
     /**
