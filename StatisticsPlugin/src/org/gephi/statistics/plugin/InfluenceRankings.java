@@ -43,6 +43,7 @@ public class InfluenceRankings implements Statistics, LongTask {
     public static final String LOCALCENTRALITY = "LocalCentrality";
     public static final String EDGECENTRALITY = "EdgeCentrality";
     public static final String KSHELL = "KShell";
+    public static final String COMMUNITYRANK = "CommunityRank";
     /**
      *
      */
@@ -60,6 +61,10 @@ public class InfluenceRankings implements Statistics, LongTask {
      *
      */
     private boolean isDirected;
+    /**
+     *
+     */
+    private String report = "";
 
     public InfluenceRankings() {
         GraphController graphController = Lookup.getDefault().lookup(GraphController.class);
@@ -104,6 +109,9 @@ public class InfluenceRankings implements Statistics, LongTask {
                 break;
             case KSHELL:
                 runKShellDecomposition(hgraph, attributeModel);
+                break;
+            case COMMUNITYRANK:
+                runCommunityRank(hgraph, attributeModel);
                 break;
             default:
                 break;
@@ -632,6 +640,83 @@ public class InfluenceRankings implements Statistics, LongTask {
         }
     }
 
+    private void runCommunityRank(HierarchicalGraph hgraph, AttributeModel attributeModel) {
+        Progress.start(progress);
+
+        final String centralityTag = /*Degree.DEGREE;*/ /*PageRank.PAGERANK;*/ GraphDistance.BETWEENNESS;
+        final double resolution = 2.0;
+
+        // create CR column table
+        AttributeTable nodeTable = attributeModel.getNodeTable();
+        AttributeColumn commRankCol = nodeTable.getColumn(COMMUNITYRANK);
+        if (commRankCol == null) {
+            commRankCol = nodeTable.addColumn(COMMUNITYRANK, COMMUNITYRANK, AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0.0));
+        }
+
+        // run modularity algorithm
+        Modularity modularityAlgo = new Modularity();
+        modularityAlgo.setResolution(resolution);
+        modularityAlgo.setRandom(true);
+        modularityAlgo.setUseWeight(true);
+        modularityAlgo.setProgressTicket(progress);
+        modularityAlgo.execute(hgraph.getGraphModel(), attributeModel);
+        List<Modularity.Community> communities = modularityAlgo.getCommunities();
+
+        // measure community sizes
+        int communitySize[] = new int[communities.size()];
+        for (int i = 0; i < communitySize.length; ++i) {
+            communitySize[i] = 0;
+        }
+        report = "Found " + communities.size() + " communities";
+
+        // assign nodes to communities map
+        Map<Integer, List<Node>> communitiesMap = new HashMap<Integer, List<Node>>();
+        int comId;
+        for (Node node : hgraph.getNodes()) {
+            // community id of current node
+            comId = (Integer) getAttribute(node, Modularity.MODULARITY_CLASS);
+            // increase community size by +1
+            communitySize[comId]++;
+            // add node to community list
+            if (!communitiesMap.containsKey(comId)) {
+                communitiesMap.put(comId, new ArrayList<Node>());
+            }
+            communitiesMap.get(comId).add(node);
+        }
+
+        // for each community pick top centrality node and assign centrality=1; rest=0
+        for (Integer com : communitiesMap.keySet()) {
+            Double maxDCentrality = -1.0;
+            Integer maxICentrality = -1;
+            Node maxCentralityNode = null;
+
+            // iterate over all nodes in each comunity
+            for (Node node : communitiesMap.get(com)) {
+                setAttribute(node, commRankCol, 0.0);
+
+                // update maximum degree once found
+                if (getAttribute(node, centralityTag) instanceof Integer) {
+                    if ((Integer) getAttribute(node, centralityTag) > maxICentrality) {
+                        maxICentrality = (Integer) getAttribute(node, centralityTag);
+                        maxCentralityNode = node;
+                    }
+                } else /*if (getAttribute(node, centralityTag) instanceof Double)*/ {
+                    if ((Double) getAttribute(node, centralityTag) > maxDCentrality) {
+                        maxDCentrality = (Double) getAttribute(node, centralityTag);
+                        maxCentralityNode = node;
+                    }
+                }
+            }
+
+            // mark max degree node
+            setAttribute(maxCentralityNode, commRankCol, communitySize[com] * 1.0);
+            //for (Node node : communitiesMap.get(com)) {
+            //setAttribute(node, commRankCol, communitySize[com] * *hgraph.getDegree(node) / maxDegree));
+            //}
+
+        }
+    }
+
     /**
      *
      * @return
@@ -680,7 +765,7 @@ public class InfluenceRankings implements Statistics, LongTask {
 
          return report;*/
 
-        return "success";
+        return report;
 
     }
 

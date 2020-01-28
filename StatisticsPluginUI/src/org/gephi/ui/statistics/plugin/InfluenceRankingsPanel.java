@@ -68,6 +68,8 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
         jXLabel9 = new org.jdesktop.swingx.JXLabel();
         radioKShell = new javax.swing.JRadioButton();
         jXLabel10 = new org.jdesktop.swingx.JXLabel();
+        radioCommunity = new javax.swing.JRadioButton();
+        jXLabel11 = new org.jdesktop.swingx.JXLabel();
 
         directedButtonGroup.add(undirectedRadioButton);
         undirectedRadioButton.setText(org.openide.util.NbBundle.getMessage(InfluenceRankingsPanel.class, "InfluenceRankingsPanel.undirectedRadioButton.text")); // NOI18N
@@ -146,6 +148,14 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
         jXLabel10.setText(org.openide.util.NbBundle.getMessage(InfluenceRankingsPanel.class, "InfluenceRankingsPanel.jXLabel10.text")); // NOI18N
         jXLabel10.setFont(jXLabel10.getFont().deriveFont(jXLabel10.getFont().getSize()-1f));
 
+        metricsGroup.add(radioCommunity);
+        radioCommunity.setText(org.openide.util.NbBundle.getMessage(InfluenceRankingsPanel.class, "InfluenceRankingsPanel.radioCommunity.text")); // NOI18N
+
+        jXLabel11.setForeground(new java.awt.Color(102, 102, 102));
+        jXLabel11.setLineWrap(true);
+        jXLabel11.setText(org.openide.util.NbBundle.getMessage(InfluenceRankingsPanel.class, "InfluenceRankingsPanel.jXLabel11.text")); // NOI18N
+        jXLabel11.setFont(jXLabel11.getFont().deriveFont(jXLabel11.getFont().getSize()-1f));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -169,6 +179,7 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
                             .addComponent(jXLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(radioCommunity)
                             .addComponent(radioKShell)
                             .addComponent(radioCommLeaderRank)
                             .addComponent(radioHirsch)
@@ -179,6 +190,7 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
                             .addGroup(layout.createSequentialGroup()
                                 .addGap(21, 21, 21)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jXLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jXLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jXLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jXLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -223,7 +235,11 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
                 .addComponent(radioKShell)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jXLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(radioCommunity)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jXLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(edgeWeightCheckbox)
                     .addComponent(jXLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -244,6 +260,7 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
     private javax.swing.JCheckBox edgeWeightCheckbox;
     private org.jdesktop.swingx.JXHeader jXHeader1;
     private org.jdesktop.swingx.JXLabel jXLabel10;
+    private org.jdesktop.swingx.JXLabel jXLabel11;
     private org.jdesktop.swingx.JXLabel jXLabel3;
     private org.jdesktop.swingx.JXLabel jXLabel4;
     private org.jdesktop.swingx.JXLabel jXLabel5;
@@ -254,6 +271,7 @@ public class InfluenceRankingsPanel extends javax.swing.JPanel {
     private javax.swing.ButtonGroup metricsGroup;
     protected javax.swing.JRadioButton radioClusterRank;
     protected javax.swing.JRadioButton radioCommLeaderRank;
+    protected javax.swing.JRadioButton radioCommunity;
     protected javax.swing.JRadioButton radioEdgeCentrality;
     protected javax.swing.JRadioButton radioHirsch;
     protected javax.swing.JRadioButton radioKShell;

@@ -60,7 +60,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE_DEPLETE;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR_INDIVIDUAL;
     /**
      * Stop condition for diffusion processes
      */
@@ -245,8 +245,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // 2) sort nodes by centrality
         //      
 
-        sortRandom(nodes);
-        //sortByCentrality(nodes, centralityTag);
+        //sortRandom(nodes);
+        sortByCentrality(nodes, centralityTag);
 
         //
         // 3) infect top pSeeders% nodes

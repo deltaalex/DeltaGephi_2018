@@ -44,6 +44,9 @@ public class InfluenceRankingsUI implements StatisticsUI {
                 case KSHELL:
                     panel.radioKShell.setSelected(true);
                     break;
+                    case COMMUNITYRANK:
+                    panel.radioCommunity.setSelected(true);
+                    break;
             }
 
             panel.setDirected(infRank.getDirected());
@@ -65,6 +68,8 @@ public class InfluenceRankingsUI implements StatisticsUI {
                 infRank.setSelectedMetric(InfluenceMetricEnum.COMMUNITYLEADERRANK);
             } else if (panel.radioKShell.isSelected()) {
                 infRank.setSelectedMetric(InfluenceMetricEnum.KSHELL);
+            } else if (panel.radioCommunity.isSelected()) {
+                infRank.setSelectedMetric(InfluenceMetricEnum.COMMUNITYRANK);
             }
 
             infRank.setDirected(panel.isDirected());
