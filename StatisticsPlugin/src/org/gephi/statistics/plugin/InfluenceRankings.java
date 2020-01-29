@@ -640,11 +640,22 @@ public class InfluenceRankings implements Statistics, LongTask {
         }
     }
 
+    /**
+     * Seed selection criterion rather than centrality. <br/> Assigns top
+     * centrality node in each community as being a spreader (CR=1), all rest
+     * have CR=0.<br/> Modularity resolution is run recursively until the number
+     * of communities matches (<=) the number of desired spreaders.
+     */
     private void runCommunityRank(HierarchicalGraph hgraph, AttributeModel attributeModel) {
         Progress.start(progress);
 
+        // number of desired spreaders (nr. comm <= nr. spreaders)
+        final int nSpreaders = (int)(0.01 * hgraph.getNodeCount());
         final String centralityTag = /*Degree.DEGREE;*/ /*PageRank.PAGERANK;*/ GraphDistance.BETWEENNESS;
-        final double resolution = 2.0;
+        // resolution that is changed to match nr. comm == nr. spreaders
+        double resolution = 1.0;
+        // resolution may vary inside this [min,max] interval:
+        double minResolution = 0.01, maxResolution = 100.0;
 
         // create CR column table
         AttributeTable nodeTable = attributeModel.getNodeTable();
@@ -653,13 +664,35 @@ public class InfluenceRankings implements Statistics, LongTask {
             commRankCol = nodeTable.addColumn(COMMUNITYRANK, COMMUNITYRANK, AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0.0));
         }
 
-        // run modularity algorithm
+        // run modularity algorithm iteratively
         Modularity modularityAlgo = new Modularity();
-        modularityAlgo.setResolution(resolution);
-        modularityAlgo.setRandom(true);
-        modularityAlgo.setUseWeight(true);
-        modularityAlgo.setProgressTicket(progress);
-        modularityAlgo.execute(hgraph.getGraphModel(), attributeModel);
+        int nrComm = 1;
+        boolean ok = false;
+        double left = minResolution, right = maxResolution;
+
+        while (!ok) {
+            resolution = (left + right) / 2.0;
+
+            modularityAlgo.setResolution(resolution);
+            modularityAlgo.setRandom(true);
+            modularityAlgo.setUseWeight(true);
+            modularityAlgo.setProgressTicket(progress);
+            modularityAlgo.execute(hgraph.getGraphModel(), attributeModel);
+            nrComm = modularityAlgo.getCommunities().size();
+
+            if (nrComm < nSpreaders) {
+                right = resolution;
+            } else if (nrComm > nSpreaders) {
+                left = resolution;
+            } else {
+                ok = true;
+            }
+
+            if (left > right) {
+                ok = true;
+            }
+        }
+
         List<Modularity.Community> communities = modularityAlgo.getCommunities();
 
         // measure community sizes

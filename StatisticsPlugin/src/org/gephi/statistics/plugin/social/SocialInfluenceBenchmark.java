@@ -56,11 +56,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /*
      * Chosen centrality for benchmark
      */
-    private BenchmarkCentrality centrality = BenchmarkCentrality.DEGREE;
+    private BenchmarkCentrality centrality = BenchmarkCentrality.GENETICRANK;
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR_INDIVIDUAL;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR;
     /**
      * Stop condition for diffusion processes
      */
@@ -76,15 +76,23 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Ratio of initial seeders
      */
-    private double pSeeders = 0.1; // .0001, .0003, .001, .003, .01    
+    private double pSeeders = 0.01; // .0001, .0003, .001, .003, .01    
+    /**
+     * Absolute number of initial seeders
+     */
+    private double nSeeders = 20;
+    /**
+     * toggles between using pSeeders (relative%) and nSeeders (absolute)
+     */
+    private boolean useRelativeSeeders = false;
     /**
      * Activity period for tolerance deplete model
      */
-    private int injectPeriod = 200;    
+    private int injectPeriod = 100; // 200
     /**
      * Active ratio for tolerance deplete model
      */
-    private double fillingFactor = 0.6;    
+    private double fillingFactor = 1.0; // 0.6
     /**
      * Ratio of population that needs to become recovered
      */
@@ -113,7 +121,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
     public void setFillingFactor(double fillingFactor) {
         this.fillingFactor = fillingFactor;
-    }   
+    }
 
     public BenchmarkCentrality getCentrality() {
         return centrality;
@@ -130,7 +138,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     public double getFillingFactor() {
         return fillingFactor;
     }
-       
+
     private Integer getDegree(Node node) {
         return (Integer) node.getAttributes().getValue(Degree.DEGREE);
     }
@@ -303,23 +311,25 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     break;
             }
 
-//            pw.println("Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)");
-//             pw.println("Ended after " + iteration + " iterations.");
-//             pw.println("End condition: " + endCondition.toString());
-//
-//             pw.println("Infected");
-//             for (int inf : infCounter) {
-//             pw.println(inf);
-//             }
-//             pw.println("Recovered");
-//             for (int rec : recCounter) {
-//             pw.println(rec);
-//             }
-//             pw.close();
+            pw.print(errorReport);
 
-//            for (Node inf : infectiousList) {
-//                pw.println(inf.getId());
-//            }
+            /*pw.println("Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)");
+             pw.println("Ended after " + iteration + " iterations.");
+             pw.println("End condition: " + endCondition.toString());
+
+             pw.println("Infected");
+             for (int inf : infCounter) {
+             pw.println(inf);
+             }
+             pw.println("Recovered");
+             for (int rec : recCounter) {
+             pw.println(rec);
+             }
+             pw.close();
+
+             for (Node inf : infectiousList) {
+             pw.println(inf.getId());
+             }*/
 
             /*BenchmarkCentrality[] centralities = {BenchmarkCentrality.DEGREE, BenchmarkCentrality.CLOSENESS, BenchmarkCentrality.BETWEENNESS, BenchmarkCentrality.HITS, BenchmarkCentrality.PAGERANK, BenchmarkCentrality.HINDEX, BenchmarkCentrality.LEADERRANK, BenchmarkCentrality.KSHELL, BenchmarkCentrality.LOCALCENTRALITY, BenchmarkCentrality.EIGENVECTOR};
              for (BenchmarkCentrality c1 : centralities) {
@@ -594,7 +604,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // tolerance modifications ratio after each interaction	 
         //final float epsilon0 = 0.001f, epsilon1 = 0.01f;
         // opinion modifications ratio after each interaction	 
-        final float omega0 = 0.155f, omega1 = 0.151f;                
+        final float omega0 = 0.155f, omega1 = 0.151f;
 
         final Map<Node, ExtraNodeData> nodeDataMap = new HashMap<Node, ExtraNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
@@ -1003,7 +1013,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
     public static enum BenchmarkCentrality {
 
-        DEGREE, BETWEENNESS, EIGENVECTOR, CLOSENESS, PAGERANK, HITS, BDPOWER, BDINFLUENCE, HINDEX, CLUSTERRANK, LEADERRANK, LOCALCENTRALITY, KSHELL
+        DEGREE, BETWEENNESS, EIGENVECTOR, CLOSENESS, PAGERANK, HITS, BDPOWER, BDINFLUENCE, HINDEX, CLUSTERRANK, LEADERRANK, LOCALCENTRALITY, KSHELL, COMMUNITYRANK, GENETICRANK
     }
 
     public static enum DiffusionAlgorithm {
@@ -1083,6 +1093,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 return InfluenceRankings.LOCALCENTRALITY;
             case KSHELL:
                 return InfluenceRankings.KSHELL;
+            case COMMUNITYRANK:
+                return InfluenceRankings.COMMUNITYRANK;
+            case GENETICRANK:
+                return GeneticRank.GENETICRANKTAG;
             default:
                 return null;
         }

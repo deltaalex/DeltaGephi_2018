@@ -86,6 +86,8 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkFill80 = new javax.swing.JCheckBox();
         checkPeriod2000 = new javax.swing.JCheckBox();
         checkPeriod10 = new javax.swing.JCheckBox();
+        checkCommunityRank = new javax.swing.JCheckBox();
+        checkGeneticRank = new javax.swing.JCheckBox();
 
         setForeground(new java.awt.Color(51, 51, 255));
 
@@ -231,6 +233,14 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkPeriod10.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod10.text")); // NOI18N
         checkPeriod10.setActionCommand(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkPeriod10.actionCommand")); // NOI18N
 
+        buttonGroup1.add(checkCommunityRank);
+        checkCommunityRank.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkCommunityRank.text")); // NOI18N
+        checkCommunityRank.setActionCommand(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkCommunityRank.actionCommand")); // NOI18N
+
+        buttonGroup1.add(checkGeneticRank);
+        checkGeneticRank.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkGeneticRank.text")); // NOI18N
+        checkGeneticRank.setActionCommand(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkGeneticRank.actionCommand")); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -239,50 +249,9 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addGap(20, 20, 20)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(labelRandomize4, javax.swing.GroupLayout.DEFAULT_SIZE, 449, Short.MAX_VALUE)
+                    .addComponent(labelRandomize4, javax.swing.GroupLayout.DEFAULT_SIZE, 520, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(checkClose)
-                            .addComponent(checkEigen)
-                            .addComponent(checkDegree)
-                            .addComponent(checkBtw))
-                        .addGap(52, 52, 52)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(checkHits)
-                            .addComponent(checkPageRank)
-                            .addComponent(checkBDPower)
-                            .addComponent(checkBDInfluence))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(checkClusterRank)
-                            .addComponent(checkHirschIndex)
-                            .addComponent(checkLeaderRank)
-                            .addComponent(checkLocalCentrality)
-                            .addComponent(checkKShell))
-                        .addGap(82, 82, 82))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(labelRandomize5, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(spreaderField, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
-                        .addGap(263, 263, 263))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(checkFill40)
-                                .addGap(18, 18, 18)
-                                .addComponent(checkFill80))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(labelRandomize6, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(periodField, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(checkSR3e4)
-                                .addGap(18, 18, 18)
-                                .addComponent(checkSR3e3)
-                                .addGap(18, 18, 18)
-                                .addComponent(checkSR3e2)
-                                .addGap(18, 18, 18)
-                                .addComponent(checkSR3e1))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(checkSR1e4)
                                 .addGap(18, 18, 18)
@@ -290,37 +259,82 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                                 .addGap(18, 18, 18)
                                 .addComponent(checkSR1e2)
                                 .addGap(18, 18, 18)
-                                .addComponent(checkSR1e1))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(checkFill20)
-                                .addGap(18, 18, 18)
-                                .addComponent(checkFill60)
-                                .addGap(18, 18, 18)
-                                .addComponent(checkFill100))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(checkClusterRank)
+                                    .addComponent(checkHirschIndex)
+                                    .addComponent(checkLeaderRank)
+                                    .addComponent(checkLocalCentrality)
+                                    .addComponent(checkSR1e1))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(checkKShell)
+                                    .addComponent(checkCommunityRank)
+                                    .addComponent(checkGeneticRank)))
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(layout.createSequentialGroup()
-                                        .addComponent(checkPeriod20)
+                                        .addComponent(labelRandomize5, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(spreaderField, javax.swing.GroupLayout.PREFERRED_SIZE, 128, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(checkClose)
+                                            .addComponent(checkEigen)
+                                            .addComponent(checkDegree)
+                                            .addComponent(checkBtw))
+                                        .addGap(52, 52, 52)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(checkHits)
+                                            .addComponent(checkPageRank)
+                                            .addComponent(checkBDPower)
+                                            .addComponent(checkBDInfluence)))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(checkFill40)
                                         .addGap(18, 18, 18)
-                                        .addComponent(checkPeriod100)
+                                        .addComponent(checkFill80))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(labelRandomize6, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(periodField, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(checkSR3e4)
                                         .addGap(18, 18, 18)
-                                        .addComponent(checkPeriod500))
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                        .addGroup(layout.createSequentialGroup()
-                                            .addComponent(labelRandomize7, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                            .addComponent(fillingFactorField, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                            .addComponent(checkPeriod50)
-                                            .addGap(18, 18, 18)
-                                            .addComponent(checkPeriod200)
-                                            .addGap(18, 18, 18)
-                                            .addComponent(checkPeriod1000))))
-                                .addGap(18, 18, 18)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(checkPeriod2000)
-                                    .addComponent(checkPeriod10))))
-                        .addGap(0, 0, Short.MAX_VALUE))))
+                                        .addComponent(checkSR3e3)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(checkSR3e2)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(checkSR3e1))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(checkFill20)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(checkFill60)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(checkFill100))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(layout.createSequentialGroup()
+                                                .addComponent(checkPeriod20)
+                                                .addGap(18, 18, 18)
+                                                .addComponent(checkPeriod100)
+                                                .addGap(18, 18, 18)
+                                                .addComponent(checkPeriod500))
+                                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                                .addGroup(layout.createSequentialGroup()
+                                                    .addComponent(labelRandomize7, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                    .addComponent(fillingFactorField, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                                    .addComponent(checkPeriod50)
+                                                    .addGap(18, 18, 18)
+                                                    .addComponent(checkPeriod200)
+                                                    .addGap(18, 18, 18)
+                                                    .addComponent(checkPeriod1000))))
+                                        .addGap(18, 18, 18)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(checkPeriod2000)
+                                            .addComponent(checkPeriod10))))
+                                .addGap(0, 0, Short.MAX_VALUE)))
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -347,16 +361,20 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                             .addComponent(checkClose)
                             .addComponent(checkBDInfluence)))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(checkHirschIndex)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(checkHirschIndex)
+                            .addComponent(checkKShell))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(checkClusterRank)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(checkClusterRank)
+                            .addComponent(checkCommunityRank))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(checkLeaderRank)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(checkLeaderRank)
+                            .addComponent(checkGeneticRank))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(checkLocalCentrality)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(checkKShell)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(33, 33, 33)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(labelRandomize5)
                     .addComponent(spreaderField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -421,6 +439,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
     protected javax.swing.JCheckBox checkBtw;
     protected javax.swing.JCheckBox checkClose;
     protected javax.swing.JCheckBox checkClusterRank;
+    protected javax.swing.JCheckBox checkCommunityRank;
     protected javax.swing.JCheckBox checkDegree;
     protected javax.swing.JCheckBox checkEigen;
     protected javax.swing.JCheckBox checkFill100;
@@ -428,6 +447,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
     protected javax.swing.JCheckBox checkFill40;
     protected javax.swing.JCheckBox checkFill60;
     protected javax.swing.JCheckBox checkFill80;
+    protected javax.swing.JCheckBox checkGeneticRank;
     protected javax.swing.JCheckBox checkHirschIndex;
     protected javax.swing.JCheckBox checkHits;
     protected javax.swing.JCheckBox checkKShell;
