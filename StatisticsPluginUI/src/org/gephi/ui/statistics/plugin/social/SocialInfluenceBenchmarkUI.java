@@ -31,7 +31,8 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
         
         if (panel != null) {
             BenchmarkCentrality centrality = socialInfluence.getCentrality();
-            double pSeeders = socialInfluence.getSeeders();
+            double pSeeders = socialInfluence.getPSeeders();
+            double nSeeders = socialInfluence.getNSeeders();
             int period = socialInfluence.getInjectPeriod();
             double fillingFactor = socialInfluence.getFillingFactor();
 
@@ -54,7 +55,7 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             panel.checkCommunityRank.setSelected(centrality.equals(BenchmarkCentrality.COMMUNITYRANK));
             panel.checkGeneticRank.setSelected(centrality.equals(BenchmarkCentrality.GENETICRANK));
 
-            panel.spreaderField.setText(String.valueOf(pSeeders));
+            panel.spreaderPField.setText(String.valueOf(pSeeders));
             panel.checkSR1e4.setSelected(pSeeders == 0.0001);
             panel.checkSR3e4.setSelected(pSeeders == 0.0003);
             panel.checkSR1e3.setSelected(pSeeders == 0.001);
@@ -62,7 +63,9 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             panel.checkSR1e2.setSelected(pSeeders == 0.01);
             panel.checkSR3e2.setSelected(pSeeders == 0.03);
             panel.checkSR1e1.setSelected(pSeeders == 0.1);
-            panel.checkSR3e1.setSelected(pSeeders == 0.3);
+            panel.checkSR3e1.setSelected(pSeeders == 0.3);            
+            
+            panel.spreaderNField.setText(String.valueOf(nSeeders));            
 
             panel.periodField.setText(String.valueOf(period));
             panel.checkPeriod10.setSelected(period == 10);
@@ -86,7 +89,8 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
     public void unsetup() {
         if (panel != null) {
             BenchmarkCentrality centrality = BenchmarkCentrality.DEGREE;
-            double pSeeders = Double.parseDouble(panel.spreaderField.getText());
+            double pSeeders = Double.parseDouble(panel.spreaderPField.getText());
+            double nSeeders = Double.parseDouble(panel.spreaderNField.getText());
             int period = Integer.parseInt(panel.periodField.getText());
             double fillingFactor = Double.parseDouble(panel.fillingFactorField.getText());
 
@@ -203,7 +207,8 @@ public class SocialInfluenceBenchmarkUI implements StatisticsUI {
             }
 
             socialInfluence.setCentrality(centrality);
-            socialInfluence.setSeeders(pSeeders);
+            socialInfluence.setPSeeders(pSeeders);
+            socialInfluence.setNSeeders(nSeeders);
             socialInfluence.setInjectPeriod(period);
             socialInfluence.setFillingFactor(fillingFactor);
         }

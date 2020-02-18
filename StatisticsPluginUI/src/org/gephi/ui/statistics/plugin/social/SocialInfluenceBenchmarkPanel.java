@@ -24,7 +24,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         validationPanel.setInnerComponent(innerPanel);
 
         ValidationGroup group = validationPanel.getValidationGroup();       
-        group.add(innerPanel.spreaderField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());
+        group.add(innerPanel.spreaderPField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());        
         group.add(innerPanel.periodField, Validators.REQUIRE_NON_EMPTY_STRING, new IntegerIntervalValidator(2, 2000));
         group.add(innerPanel.fillingFactorField, Validators.REQUIRE_NON_EMPTY_STRING, new BetweenZeroAndOneValidator());
 
@@ -60,7 +60,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkLocalCentrality = new javax.swing.JCheckBox();
         checkKShell = new javax.swing.JCheckBox();
         labelRandomize5 = new javax.swing.JLabel();
-        spreaderField = new javax.swing.JTextField();
+        spreaderPField = new javax.swing.JTextField();
         checkSR1e4 = new javax.swing.JCheckBox();
         checkSR3e4 = new javax.swing.JCheckBox();
         checkSR1e3 = new javax.swing.JCheckBox();
@@ -88,6 +88,8 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkPeriod10 = new javax.swing.JCheckBox();
         checkCommunityRank = new javax.swing.JCheckBox();
         checkGeneticRank = new javax.swing.JCheckBox();
+        labelRandomize8 = new javax.swing.JLabel();
+        spreaderNField = new javax.swing.JTextField();
 
         setForeground(new java.awt.Color(51, 51, 255));
 
@@ -150,7 +152,7 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         labelRandomize5.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.labelRandomize5.text")); // NOI18N
         labelRandomize5.setForeground(new java.awt.Color(102, 102, 102));
 
-        spreaderField.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.spreaderField.text")); // NOI18N
+        spreaderPField.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.spreaderPField.text")); // NOI18N
 
         buttonGroup2.add(checkSR1e4);
         checkSR1e4.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkSR1e4.text")); // NOI18N
@@ -241,6 +243,12 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
         checkGeneticRank.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkGeneticRank.text")); // NOI18N
         checkGeneticRank.setActionCommand(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.checkGeneticRank.actionCommand")); // NOI18N
 
+        labelRandomize8.setFont(labelRandomize8.getFont().deriveFont(labelRandomize8.getFont().getSize()-1f));
+        labelRandomize8.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.labelRandomize8.text")); // NOI18N
+        labelRandomize8.setForeground(new java.awt.Color(102, 102, 102));
+
+        spreaderNField.setText(org.openide.util.NbBundle.getMessage(SocialInfluenceBenchmarkPanel.class, "SocialInfluenceBenchmarkPanel.spreaderNField.text")); // NOI18N
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -272,10 +280,6 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                                     .addComponent(checkGeneticRank)))
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(labelRandomize5, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(spreaderField, javax.swing.GroupLayout.PREFERRED_SIZE, 128, javax.swing.GroupLayout.PREFERRED_SIZE))
                                     .addGroup(layout.createSequentialGroup()
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(checkClose)
@@ -332,7 +336,15 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                                         .addGap(18, 18, 18)
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(checkPeriod2000)
-                                            .addComponent(checkPeriod10))))
+                                            .addComponent(checkPeriod10)))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(labelRandomize5, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(spreaderPField, javax.swing.GroupLayout.PREFERRED_SIZE, 128, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(labelRandomize8, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(spreaderNField, javax.swing.GroupLayout.PREFERRED_SIZE, 128, javax.swing.GroupLayout.PREFERRED_SIZE)))
                                 .addGap(0, 0, Short.MAX_VALUE)))
                         .addContainerGap())))
         );
@@ -375,9 +387,13 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(checkLocalCentrality)))
                 .addGap(33, 33, 33)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(labelRandomize5)
-                    .addComponent(spreaderField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(labelRandomize8)
+                        .addComponent(spreaderNField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(labelRandomize5)
+                        .addComponent(spreaderPField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(checkSR1e4)
@@ -476,7 +492,9 @@ public class SocialInfluenceBenchmarkPanel extends javax.swing.JPanel {
     private javax.swing.JLabel labelRandomize5;
     private javax.swing.JLabel labelRandomize6;
     private javax.swing.JLabel labelRandomize7;
+    private javax.swing.JLabel labelRandomize8;
     protected javax.swing.JTextField periodField;
-    protected javax.swing.JTextField spreaderField;
+    protected javax.swing.JTextField spreaderNField;
+    protected javax.swing.JTextField spreaderPField;
     // End of variables declaration//GEN-END:variables
 }

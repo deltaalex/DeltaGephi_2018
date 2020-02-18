@@ -40,9 +40,9 @@ public class GeneticRank implements Statistics, LongTask {
      */
     private int nIndividuals = 100;
     // elitism, crossover, mutation percentages
-    private double elitism = 0.7;
-    private double crosover = 0.2;
-    private double mutation = 0.1;
+    private double elitism = 0.5;
+    private double crosover = 0.3;
+    private double mutation = 0.2;
     //
     private ProgressTicket progress;
     //
@@ -216,7 +216,6 @@ public class GeneticRank implements Statistics, LongTask {
         // apply best solution
         bestSolution.applySolution();
 
-
         progress.switchToDeterminate(100);
         progress.finish();
         hgraph.readUnlockAll();
@@ -376,7 +375,7 @@ public class GeneticRank implements Statistics, LongTask {
                 }
 
                 // stop condition: when more than coverRatio (95%) of nodes are covered
-                if (covered >= (int) (coverRatio * nodes.size())) {
+                if (covered >= (int) (coverRatio * nodes.size()) || k > 10) { /*k>10 avoids infinite loops in disconnected graphs*/
                     finished = true;
                 }
             }
@@ -443,6 +442,9 @@ public class GeneticRank implements Statistics, LongTask {
         }
 
         public void applySolution() {
+            // for debugging only
+            double closeness = 0.0;
+
             // clean all color tags (=0)
             for (Node node : nodes) {
                 setAttribute(node, geneticRankCol, 0);
@@ -450,7 +452,10 @@ public class GeneticRank implements Statistics, LongTask {
             // set nSpreaders to =1
             for (Node node : solution) {
                 setAttribute(node, geneticRankCol, 1);
+                closeness += (Double) getAttribute(node, GraphDistance.CLOSENESS);
             }
+
+            report += "\n Average closeness of " + solution.size() + " spreaders: " + (closeness / solution.size());
         }
 
         public Double getFitness() {

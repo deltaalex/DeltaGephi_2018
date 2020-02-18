@@ -78,9 +78,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      */
     private double pSeeders = 0.01; // .0001, .0003, .001, .003, .01    
     /**
-     * Absolute number of initial seeders
+     * Absolute number of initial seeders; used instead of pSeeders only if
+     * value is >0
      */
-    private double nSeeders = 20;
+    private double nSeeders = 10;
     /**
      * toggles between using pSeeders (relative%) and nSeeders (absolute)
      */
@@ -111,8 +112,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         this.centrality = centrality;
     }
 
-    public void setSeeders(double pSeeders) {
+    public void setPSeeders(double pSeeders) {
         this.pSeeders = pSeeders;
+    }
+
+    public void setNSeeders(double nSeeders) {
+        this.nSeeders = nSeeders;
     }
 
     public void setInjectPeriod(int injectPeriod) {
@@ -127,8 +132,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         return centrality;
     }
 
-    public double getSeeders() {
+    public double getPSeeders() {
         return pSeeders;
+    }
+
+    public double getNSeeders() {
+        return nSeeders;
     }
 
     public int getInjectPeriod() {
@@ -1151,7 +1160,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
 
             // set attributes for top seeder nodes
-            if (i < Math.ceil(pSeeders * nodes.size())) {
+            if (i < (nSeeders > 0 ? nSeeders : (Math.ceil(pSeeders * nodes.size())))) {
                 row.setValue(sirCol, SIRType.INFECTED);
                 row.setValue(deltaCol, 0);
                 infectiousList.add(node);
@@ -1208,7 +1217,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             row = (AttributeRow) node.getNodeData().getAttributes();
 
             // set attributes for top seeder nodes
-            if (i < Math.ceil(pSeeders * nodes.size())) {
+            if (i < (nSeeders > 0 ? nSeeders : (Math.ceil(pSeeders * nodes.size())))) {
                 row.setValue(sirCol, SIRType.INFECTED);
                 row.setValue(deltaCol, 0);
                 infectiousList.add(node);
