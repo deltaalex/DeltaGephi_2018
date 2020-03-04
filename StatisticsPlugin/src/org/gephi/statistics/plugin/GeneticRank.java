@@ -34,7 +34,7 @@ public class GeneticRank implements Statistics, LongTask {
     /**
      * Number of genetic algorithm generations
      */
-    private int nGenerations = 12;
+    private int nGenerations = 10;
     /**
      * Number of individuals per generation
      */
