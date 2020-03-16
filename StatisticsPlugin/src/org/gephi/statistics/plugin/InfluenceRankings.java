@@ -651,7 +651,7 @@ public class InfluenceRankings implements Statistics, LongTask {
 
         // number of desired spreaders (nr. comm <= nr. spreaders)
         final int nSpreaders = 10;//(int)(0.01 * hgraph.getNodeCount());
-        final String centralityTag = Degree.DEGREE; /*GraphDistance.BETWEENNESS;*/ /*PageRank.PAGERANK;*/ /*InfluenceRankings.LEADERRANK;*/
+        final String centralityTag = /*Degree.DEGREE;*/ /*GraphDistance.BETWEENNESS;*/ /*PageRank.PAGERANK;*/ InfluenceRankings.LEADERRANK;
         // resolution that is changed to match nr. comm == nr. spreaders
         double resolution = 1.0;
         // resolution may vary inside this [min,max] interval:

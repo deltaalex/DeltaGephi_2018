@@ -17,6 +17,7 @@ import org.gephi.data.attributes.api.AttributeOrigin;
 import org.gephi.data.attributes.api.AttributeRow;
 import org.gephi.data.attributes.api.AttributeTable;
 import org.gephi.data.attributes.api.AttributeType;
+import org.gephi.graph.api.Edge;
 import org.gephi.graph.api.GraphModel;
 import org.gephi.graph.api.HierarchicalGraph;
 import org.gephi.graph.api.Node;
@@ -56,15 +57,15 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /*
      * Chosen centrality for benchmark
      */
-    private BenchmarkCentrality centrality = BenchmarkCentrality.GENETICRANK;
+    private BenchmarkCentrality centrality = BenchmarkCentrality.DEGREE;
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE_EPIDEMIC;
     /**
      * Stop condition for diffusion processes
      */
-    private final int MAX_ITERATIONS = 2000;
+    private final int MAX_ITERATIONS = 2000; // 2000
     /**
      * How often the population should be polled during the tolerance diffusion
      */
@@ -76,16 +77,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Ratio of initial seeders
      */
-    private double pSeeders = 0.01; // .0001, .0003, .001, .003, .01    
+    private double pSeeders = 0.5; // .0001, .0003, .001, .003, .01    
     /**
      * Absolute number of initial seeders; used instead of pSeeders only if
      * value is >0
      */
     private double nSeeders = 10;
-    /**
-     * toggles between using pSeeders (relative%) and nSeeders (absolute)
-     */
-    private boolean useRelativeSeeders = false;
     /**
      * Activity period for tolerance deplete model
      */
@@ -244,7 +241,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             nodes.add(node);
         }
 
-        graph.readLock();
+        //graph.readLock();
         Progress.start(progress);
         progress.switchToIndeterminate();
 
@@ -262,8 +259,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // 2) sort nodes by centrality
         //      
 
-        //sortRandom(nodes);
-        sortByCentrality(nodes, centralityTag);
+        sortRandom(nodes);
+        //sortByCentrality(nodes, centralityTag);
 
         //
         // 3) infect top pSeeders% nodes
@@ -311,6 +308,9 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     break;
                 case TOLERANCE:
                     runTolerance(graph, nodes, infectiousList, sirCol, deltaCol);
+                    break;
+                case TOLERANCE_EPIDEMIC:
+                    runToleranceEpidemic(graph, nodes, infectiousList, sirCol, deltaCol);
                     break;
                 case TOLERANCE_DEPLETE:
                     runToleranceDeplete(graph, nodes, infectiousList, sirCol, deltaCol, pw);
@@ -479,7 +479,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         int iteration = -1; // due to initial ++ increment
         Random rand = new Random();
         // reactivation interval for nodes
-        final int minSleep = 5, maxSleep = 50;
+        final int minSleep = 5, maxSleep = 50; // 5/50
         // tolerance modifications ratio after each interaction	 
         final float epsilon0 = 0.001f, epsilon1 = 0.01f;
 
@@ -488,7 +488,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
         // init: attach extra node data to all nodes
         for (Node node : nodes) {
-            // default nodes have opinion=0, half tolerance and are non-stubborn
+            // default nodes have opinion=0, full tolerance and are non-stubborn
             ExtraNodeData data = new ExtraNodeData(0f, 1f, getRandomSleep(rand, minSleep, maxSleep), false);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
@@ -589,6 +589,196 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         } // end simulation
 
         errorReport = "Convinced: " + convinced.get(convinced.size() - 1) + " (" + (100.0 * convinced.get(convinced.size() - 1) / nodes.size()) + " %)\n";
+        errorReport += "Ended after " + iteration + " iterations\n";
+        //errorReport += "End condition: " + endCondition.toString() + "\n\n";
+//            errorReport += "Infected\n";
+//            for (int inf : infCounter) {
+//                errorReport += inf;
+//            }
+        errorReport += "\nReach evolution:\n\n";
+        for (int rec : convinced) {
+            errorReport += rec + "\n";
+        }
+    }
+
+    // runs the classic tolerance model with either single (one random neighbour) or complex (average all neighbours) diffusion
+    // in the epidemic mode: opinion->infectiousness; 
+    private void runToleranceEpidemic(HierarchicalGraph graph, List<Node> nodes, List<Node> stubbornAgents, AttributeColumn sirCol, AttributeColumn deltaCol) {
+        // whether to use centralized or decentralized edge removal approaches
+        final boolean CENTRALIZED = false, DECENTRALIZED = true;
+        // random edges (%) to remove from each node in centralized approach        
+        double ratioEdgesToRemove = pSeeders; // 0.85
+
+
+        int iteration = -1; // due to initial ++ increment
+        Random rand = new Random();
+        // reactivation interval for nodes
+        final int minSleep = 1, maxSleep = 1; // 5/50
+        // tolerance modifications ratio after each interaction	 
+        final float epsilon0 = 0.001f, epsilon1 = 0.01f;
+
+        final Map<Node, ExtraNodeData> nodeDataMap = new HashMap<Node, ExtraNodeData>();
+        final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
+
+        // init: attach extra node data to all nodes
+        for (Node node : nodes) {
+            // default nodes have opinion=0, full tolerance and are non-stubborn
+            ExtraNodeData data = new ExtraNodeData(0f, 1f, getRandomSleep(rand, minSleep, maxSleep), false);
+            nodeDataMap.put(node, data);
+            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+            row.setValue(sirCol, 0);
+        }
+        for (Node node : stubbornAgents) {
+            // spreader nodes always have opinion = 0 or 1 (opposite), irrelevant tolerance and are stubborn
+            ExtraNodeData data = new ExtraNodeData(1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
+            nodeDataMap.put(node, data);
+            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+            row.setValue(sirCol, 1);
+        }
+
+        // remove edges in centralized mode
+        if (CENTRALIZED) {
+            List<Edge> edgesToRemove = new ArrayList<Edge>();
+            // mark all edges to be removed at random
+            for (Edge edge : graph.getEdges()) {
+                if ((1 - ratioEdgesToRemove) < rand.nextDouble()) {
+                    edgesToRemove.add(edge);
+                }
+            }
+            // remove all marked edges
+            for (Edge edge : edgesToRemove) {
+                graph.removeEdge(edge);
+            }
+        }
+
+        ExtraNodeData nodeData;
+        Node[] neighbours;
+        Node neighbour;
+        float neighbourOpinion, oldOpinion;
+        List<Integer> convinced = new ArrayList<Integer>();
+
+        // long-term stop condition (1k)
+        while (iteration++ < MAX_ITERATIONS) {
+            // iterate nodes
+            for (Node node : nodes) {
+                // if node is stubborn, then ignore
+                nodeData = nodeDataMap.get(node);
+                if (nodeData.isStubborn) {
+                    // just ignore them, stubborn agents do not change at all
+                } else {
+                    // if has slept enough
+                    if (nodeData.sleep <= 0) {
+                        // get list of neighbours
+                        neighbours = graph.getNeighbors(node).toArray();
+
+                        if (neighbours.length > 0) {
+                            // store average neighborhood opinion / or single neighbour's opinion
+                            neighbourOpinion = 0f;
+                            // store old opinion of node for later tolerance update
+                            oldOpinion = nodeData.opinion;
+
+                            // pick average opinion of all neighbours or or one single random neighobur
+                            if (COMPLEX_DIFFUSION) {
+                                // iterate through all friends
+                                for (Node _neighbour : graph.getNeighbors(node)) {
+                                    // get friend's opinion
+                                    neighbourOpinion += nodeDataMap.get(_neighbour).opinion;
+                                }
+                                neighbourOpinion /= (1f * graph.getNeighbors(node).toArray().length);
+                            } else {
+                                // pick one random friend from the vicinity of the node
+                                neighbour = neighbours[rand.nextInt(neighbours.length)];
+                                // get friend's opinion
+                                neighbourOpinion = nodeDataMap.get(neighbour).opinion;
+                            }
+
+                            // update node infectiousness
+                            nodeData.opinion = nodeData.tolerance * neighbourOpinion + (1 - nodeData.tolerance) * nodeData.opinion;
+                            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+                            row.setValue(deltaCol, nodeData.getNodeState() ? 1 : 0);
+
+                            ///// update node tolerance
+                            // 1) states of interacting nodes is equal => tolerance drops
+//                            if (nodeData.getNodeState() == nodeData.getNodeState(neighbourOpinion)) {
+//                                nodeData.tolerance = Math.max(nodeData.tolerance - epsilon0 * nodeData.scaling0, 0);
+//                            } // 2) states of interacting nodes is different => tolerance increases
+//                            else {
+//                                nodeData.tolerance = Math.min(nodeData.tolerance + epsilon1 * nodeData.scaling1, 1);
+//                            }
+
+                            // 1) target is infected >=0.5 => tolerance drops
+                            if (nodeData.getNodeState(neighbourOpinion) == true) {
+                                nodeData.tolerance = Math.max(nodeData.tolerance - epsilon0 * nodeData.scaling0, 0);
+                            } // 2) target is healthy <0.5 => tolerance increases
+                            else {
+                                nodeData.tolerance = Math.min(nodeData.tolerance + epsilon1 * nodeData.scaling1, 1);
+                            }
+
+                            if (nodeData.getNodeState(oldOpinion) == nodeData.getNodeState()) {
+                                nodeData.scaling0++;
+                                nodeData.scaling1 = 1;
+                            } else {
+                                nodeData.scaling0 = 1;
+                                nodeData.scaling1++;
+                            }
+                            ///// end update node tolerance
+
+                            //// update skin in the game
+                            if (DECENTRALIZED) {
+                                double skin = 0.0;
+                                // iterate through neighbors
+                                for (Node _neighbour : neighbours) {
+                                    // count number of infected neighbors                             
+                                    if (nodeDataMap.get(_neighbour).getNodeState() == true) {
+                                        skin++;
+                                    }
+                                }
+                                skin /* = nodeData.opinion; */ /= (1f * neighbours.length);
+
+                                if (skin > 0) {
+                                    // remove edges ratio <-- skin%
+                                    List<Edge> edgesToRemove = new ArrayList<Edge>();
+                                    // mark all incident edges to be removed at random                                
+                                    for (Edge edge : graph.getEdges(node)) {
+                                        if ((1 - pSeeders) /** (1 - skin)*/
+                                                < rand.nextDouble()) {
+                                            edgesToRemove.add(edge);
+                                        }
+                                    }
+                                    // remove all marked edges                                    
+                                    for (Edge edge : edgesToRemove) {
+                                        graph.removeEdge(edge);
+                                    }
+                                    edgesToRemove = null;
+                                } // end skin>0
+                            }
+
+                        } // node has neighbours
+
+                        // reset sleep
+                        nodeData.sleep = getRandomSleep(rand, minSleep, maxSleep);
+
+                    }// end node is not sleeping
+                    else {
+                        nodeData.sleep--; // decrease sleep
+                    }
+                } // end node change state
+            } // end one iteration
+
+            // run poll every 100 iterations
+            if (iteration % POLL_FREQUENCY == 0) {
+                // measure number of nodes with state == true (>0.5)
+                int count = 0;
+                for (Node node : nodes) {
+                    if (nodeDataMap.get(node).getNodeState()) {
+                        count++;
+                    }
+                }
+                convinced.add(count);
+            }
+        } // end simulation
+
+        errorReport += "Convinced: " + convinced.get(convinced.size() - 1) + " (" + (100.0 * convinced.get(convinced.size() - 1) / nodes.size()) + " %)\n";
         errorReport += "Ended after " + iteration + " iterations\n";
         //errorReport += "End condition: " + endCondition.toString() + "\n\n";
 //            errorReport += "Infected\n";
@@ -1027,7 +1217,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
     public static enum DiffusionAlgorithm {
 
-        SIR, TOLERANCE, SIR_INDIVIDUAL, TOLERANCE_DEPLETE, TOLERANCE_COMPETE
+        SIR, TOLERANCE, SIR_INDIVIDUAL, TOLERANCE_DEPLETE, TOLERANCE_COMPETE, TOLERANCE_EPIDEMIC
     }
 
     private enum SIRType {
