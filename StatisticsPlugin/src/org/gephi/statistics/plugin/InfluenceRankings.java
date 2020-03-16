@@ -234,6 +234,8 @@ public class InfluenceRankings implements Statistics, LongTask {
             leaderRanksCol = nodeTable.addColumn(LEADERRANK, LEADERRANK, AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0));
         }
 
+        long start = System.nanoTime();
+
         // 1: init all nodes with score=1; ground=0
         for (Node node : hgraph.getNodes()) {
             setAttribute(node, leaderRanksCol, 1.0);
@@ -242,7 +244,7 @@ public class InfluenceRankings implements Statistics, LongTask {
         int count = 1000;
         boolean done;
 
-        // 2: iterate by redistributing the score evenly to all neighbours, i.e. give my score / number of neighbors to everone around
+        // 2: iterate by redistributing the score evenly to all neighbours, i.e. give my score / number of neighbors to everyone around
         while (count-- > 0) {
             done = true;
 
@@ -317,6 +319,9 @@ public class InfluenceRankings implements Statistics, LongTask {
         for (Node node : hgraph.getNodes()) {
             setAttribute(node, leaderRanksCol, (Double) getAttribute(node, LEADERRANK) + remainingLR);
         }
+
+        long stop = System.nanoTime();
+        report += "Runtime: " + ((stop - start) / 1e+6) + "\n";
     }
 
     private void runCommunityLeaderRank(HierarchicalGraph hgraph, AttributeModel attributeModel) {
@@ -651,7 +656,7 @@ public class InfluenceRankings implements Statistics, LongTask {
 
         // number of desired spreaders (nr. comm <= nr. spreaders)
         final int nSpreaders = 10;//(int)(0.01 * hgraph.getNodeCount());
-        final String centralityTag = /*Degree.DEGREE;*/ /*GraphDistance.BETWEENNESS;*/ /*PageRank.PAGERANK;*/ InfluenceRankings.LEADERRANK;
+        final String centralityTag = Degree.DEGREE; /*GraphDistance.BETWEENNESS;*/ /*PageRank.PAGERANK;*/ /*InfluenceRankings.LEADERRANK;*/
         // resolution that is changed to match nr. comm == nr. spreaders
         double resolution = 1.0;
         // resolution may vary inside this [min,max] interval:
@@ -663,6 +668,8 @@ public class InfluenceRankings implements Statistics, LongTask {
         if (commRankCol == null) {
             commRankCol = nodeTable.addColumn(COMMUNITYRANK, COMMUNITYRANK, AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0.0));
         }
+
+        long start = System.nanoTime(); // runtime
 
         // run modularity algorithm iteratively
         Modularity modularityAlgo = new Modularity();
@@ -748,6 +755,9 @@ public class InfluenceRankings implements Statistics, LongTask {
             //}
 
         }
+
+        long stop = System.nanoTime(); // runtime
+        report += "Runtime: " + ((stop - start) / 1e+6) + "\n";
     }
 
     /**

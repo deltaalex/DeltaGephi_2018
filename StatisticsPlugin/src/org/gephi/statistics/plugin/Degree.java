@@ -163,6 +163,7 @@ public class Degree implements Statistics, LongTask {
         int i = 0;
 
         graph.readLock();
+        long start = System.nanoTime();
 
         Progress.start(progress, graph.getNodeCount());
 
@@ -221,9 +222,13 @@ public class Degree implements Statistics, LongTask {
         avgDegree /= (isDirected) ? 2 * graph.getNodeCount() : graph.getNodeCount();
         graph.getAttributes().setValue(avgDegreeCol.getIndex(), avgDegree);
 
+        long stop = System.nanoTime();
+        runtime = (stop-start);
         graph.readUnlockAll();
     }
 
+    private long runtime;
+    
     /**
      *
      * @return
@@ -279,6 +284,7 @@ public class Degree implements Statistics, LongTask {
 
             report = "<HTML> <BODY> <h1>Degree Report </h1> "
                     + "<hr>"
+                    + "<br>Runtime [ms]: " + (runtime/1e+6) 
                     + "<br> <h2> Results: </h2>"
                     + "Average Degree: " + f.format(avgDegree)
                     + "<br /><br />" + degreeImageFile
@@ -366,6 +372,7 @@ public class Degree implements Statistics, LongTask {
 
         String report = "<HTML> <BODY> <h1>Degree Report </h1> "
                 + "<hr>"
+                + "<br>Runtime [ms]: " + (runtime/1e+6) 
                 + "<br> <h2> Results: </h2>"
                 + "Average Degree: " + f.format(avgDegree)
                 + "<br /><br />" + degreeImageFile

@@ -195,6 +195,7 @@ public class GraphDistance implements Statistics, LongTask {
         }
 
         hgraph.readLock();
+        long start = System.nanoTime();
 
         HierarchicalDirectedGraph directedGraph = null;
         if (isDirected) {
@@ -397,8 +398,11 @@ public class GraphDistance implements Statistics, LongTask {
 
             row.setValue(btdPowCol, 1.0 * betweenness[s_index] * hgraph.getTotalDegree(s));
         }
+
+        long stop = System.nanoTime();
+        runtime = stop - start;
         hgraph.readUnlock();
-    }
+    }   
 
     public void setNormalized(boolean isNormalized) {
         this.isNormalized = isNormalized;
@@ -450,6 +454,8 @@ public class GraphDistance implements Statistics, LongTask {
         return ChartUtils.renderChart(chart, pName + ".png");
     }
 
+     private long runtime;
+    
     /**
      *
      * @return
@@ -496,6 +502,7 @@ public class GraphDistance implements Statistics, LongTask {
                 + "<br>"
                 + "<h2> Parameters: </h2>"
                 + "Network Interpretation:  " + (isDirected ? "directed" : "undirected") + "<br />"
+                + "<br>Runtime [ms]: " + (runtime / 1e+6)
                 + "<br /> <h2> Results: </h2>"
                 + "Diameter: " + diameter + "<br />"
                 + "Radius: " + radius + "<br />"

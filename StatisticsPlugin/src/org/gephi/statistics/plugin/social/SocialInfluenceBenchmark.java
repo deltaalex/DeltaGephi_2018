@@ -57,11 +57,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /*
      * Chosen centrality for benchmark
      */
-    private BenchmarkCentrality centrality = BenchmarkCentrality.DEGREE;
+    private BenchmarkCentrality centrality = BenchmarkCentrality.COMMUNITYRANK;
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE_EPIDEMIC;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR;
     /**
      * Stop condition for diffusion processes
      */
