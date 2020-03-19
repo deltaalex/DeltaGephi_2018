@@ -57,11 +57,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /*
      * Chosen centrality for benchmark
      */
-    private BenchmarkCentrality centrality = BenchmarkCentrality.COMMUNITYRANK;
+    private BenchmarkCentrality centrality = BenchmarkCentrality.DEGREE;
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE_EPIDEMIC;
     /**
      * Stop condition for diffusion processes
      */
@@ -82,7 +82,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      * Absolute number of initial seeders; used instead of pSeeders only if
      * value is >0
      */
-    private double nSeeders = 10;
+    private double nSeeders = 50;
     /**
      * Activity period for tolerance deplete model
      */
@@ -259,8 +259,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // 2) sort nodes by centrality
         //      
 
-        sortRandom(nodes);
-        //sortByCentrality(nodes, centralityTag);
+        //sortRandom(nodes);
+        sortByCentrality(nodes, centralityTag);
 
         //
         // 3) infect top pSeeders% nodes
@@ -317,10 +317,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     break;
                 case TOLERANCE_COMPETE:
                     runToleranceCompete(graph, nodes, infectiousList, sirCol, opinionCol);
+                case SOCIAL_PROFIT:
+                    runSocialProfitDiffusion(graph, nodes, infectiousList, sirCol, deltaCol, pw);
                     break;
             }
 
-            pw.print(errorReport);
+            //pw.print(errorReport);
 
             /*pw.println("Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)");
              pw.println("Ended after " + iteration + " iterations.");
@@ -483,26 +485,26 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // tolerance modifications ratio after each interaction	 
         final float epsilon0 = 0.001f, epsilon1 = 0.01f;
 
-        final Map<Node, ExtraNodeData> nodeDataMap = new HashMap<Node, ExtraNodeData>();
+        final Map<Node, OpinionNodeData> nodeDataMap = new HashMap<Node, OpinionNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
 
         // init: attach extra node data to all nodes
         for (Node node : nodes) {
             // default nodes have opinion=0, full tolerance and are non-stubborn
-            ExtraNodeData data = new ExtraNodeData(0f, 1f, getRandomSleep(rand, minSleep, maxSleep), false);
+            OpinionNodeData data = new OpinionNodeData(0f, 1f, getRandomSleep(rand, minSleep, maxSleep), false);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 0);
         }
         for (Node node : stubbornAgents) {
             // spreader nodes always have opinion = 0 or 1 (opposite), irrelevant tolerance and are stubborn
-            ExtraNodeData data = new ExtraNodeData(1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
+            OpinionNodeData data = new OpinionNodeData(1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 1);
         }
 
-        ExtraNodeData nodeData;
+        OpinionNodeData nodeData;
         Node[] neighbours;
         Node neighbour;
         float neighbourOpinion, oldOpinion;
@@ -617,20 +619,20 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // tolerance modifications ratio after each interaction	 
         final float epsilon0 = 0.001f, epsilon1 = 0.01f;
 
-        final Map<Node, ExtraNodeData> nodeDataMap = new HashMap<Node, ExtraNodeData>();
+        final Map<Node, OpinionNodeData> nodeDataMap = new HashMap<Node, OpinionNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
 
         // init: attach extra node data to all nodes
         for (Node node : nodes) {
             // default nodes have opinion=0, full tolerance and are non-stubborn
-            ExtraNodeData data = new ExtraNodeData(0f, 1f, getRandomSleep(rand, minSleep, maxSleep), false);
+            OpinionNodeData data = new OpinionNodeData(0f, 1f, getRandomSleep(rand, minSleep, maxSleep), false);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 0);
         }
         for (Node node : stubbornAgents) {
             // spreader nodes always have opinion = 0 or 1 (opposite), irrelevant tolerance and are stubborn
-            ExtraNodeData data = new ExtraNodeData(1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
+            OpinionNodeData data = new OpinionNodeData(1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 1);
@@ -651,7 +653,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             }
         }
 
-        ExtraNodeData nodeData;
+        OpinionNodeData nodeData;
         Node[] neighbours;
         Node neighbour;
         float neighbourOpinion, oldOpinion;
@@ -665,6 +667,9 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 nodeData = nodeDataMap.get(node);
                 if (nodeData.isStubborn) {
                     // just ignore them, stubborn agents do not change at all
+//                    if (iteration > 10) {
+//                        nodeData.isStubborn = false;
+//                    }
                 } else {
                     // if has slept enough
                     if (nodeData.sleep <= 0) {
@@ -735,13 +740,15 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                                 }
                                 skin /* = nodeData.opinion; */ /= (1f * neighbours.length);
 
-                                if (skin > 0) {
+                                if (skin > 0.5) {
                                     // remove edges ratio <-- skin%
                                     List<Edge> edgesToRemove = new ArrayList<Edge>();
                                     // mark all incident edges to be removed at random                                
                                     for (Edge edge : graph.getEdges(node)) {
-                                        if ((1 - pSeeders) /** (1 - skin)*/
-                                                < rand.nextDouble()) {
+                                        if (rand.nextDouble() < pSeeders /**
+                                                 * (1 - skin)
+                                                 */
+                                                ) {
                                             edgesToRemove.add(edge);
                                         }
                                     }
@@ -805,26 +812,26 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // opinion modifications ratio after each interaction	 
         final float omega0 = 0.155f, omega1 = 0.151f;
 
-        final Map<Node, ExtraNodeData> nodeDataMap = new HashMap<Node, ExtraNodeData>();
+        final Map<Node, OpinionNodeData> nodeDataMap = new HashMap<Node, OpinionNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
 
         // init: attach extra node data to all nodes
         for (Node node : nodes) {
             // default nodes have opinion=0, and are non-stubborn; -999 = ignore
-            ExtraNodeData data = new ExtraNodeData(0f, IGNORE, getRandomSleep(rand, minSleep, maxSleep), false);
+            OpinionNodeData data = new OpinionNodeData(0f, IGNORE, getRandomSleep(rand, minSleep, maxSleep), false);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 0);
         }
         for (Node node : stubbornAgents) {
             // spreader nodes always have opinion = 1 (fully induced), irrelevant tolerance and are stubborn
-            ExtraNodeData data = new ExtraNodeData(1f, IGNORE, getRandomSleep(rand, minSleep, maxSleep), true);
+            OpinionNodeData data = new OpinionNodeData(1f, IGNORE, getRandomSleep(rand, minSleep, maxSleep), true);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 1);
         }
 
-        ExtraNodeData nodeData;
+        OpinionNodeData nodeData;
         Node[] neighbours;
         Node neighbour;
         float neighbourOpinion;
@@ -931,13 +938,13 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // tolerance modifications ratio after each interaction	 
         final float epsilon0 = 0.001f, epsilon1 = 0.01f;
 
-        final Map<Node, ExtraNodeData> nodeDataMap = new HashMap<Node, ExtraNodeData>();
+        final Map<Node, OpinionNodeData> nodeDataMap = new HashMap<Node, OpinionNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
 
         // init: attach extra node data to all nodes
         for (Node node : nodes) {
             // default nodes have opinion=0, half tolerance and are non-stubborn
-            ExtraNodeData data = new ExtraNodeData(rand.nextFloat(), 1f, getRandomSleep(rand, minSleep, maxSleep), false);
+            OpinionNodeData data = new OpinionNodeData(rand.nextFloat(), 1f, getRandomSleep(rand, minSleep, maxSleep), false);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 0);
@@ -945,14 +952,14 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         int _s = 0;
         for (Node node : stubbornAgents) {
             // spreader nodes always have opinion = 0 or 1 (opposite), tolerance=0 always, and are stubborn
-            ExtraNodeData data = new ExtraNodeData((_s % 2 == 0) ? 0f : 1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
+            OpinionNodeData data = new OpinionNodeData((_s % 2 == 0) ? 0f : 1f, 0f, getRandomSleep(rand, minSleep, maxSleep), true);
             nodeDataMap.put(node, data);
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 1);
             _s++;
         }
 
-        ExtraNodeData nodeData;
+        OpinionNodeData nodeData;
         Node[] neighbours;
         Node neighbour;
         float neighbourOpinion, oldOpinion;
@@ -1173,8 +1180,178 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         errorReport = "Kendall's tau: " + kendall + " for " + centralityTag + "\n";
 
     }
-    // </editor-fold>    
-    // <editor-fold defaultstate="collapsed" desc="Misc Area">
+
+    // runs the social profit diffsion where each node offers social effort to (self and neighbors) based on his generosity (gamma).
+    // E = (1-g)*self + g*peer/<k>; B = (1-g)*self + sum(incoming Ej); P=B-E.
+    // Keep track of average E, B, P in time.
+    private void runSocialProfitDiffusion(HierarchicalGraph graph, List<Node> nodes, List<Node> stubbornAgents, AttributeColumn sirCol, AttributeColumn deltaCol, PrintWriter pw) {
+        // whether to use homogeneous or heterogeneous model
+        final boolean HOMOGENEOUS = true;
+
+        int iteration = -1; // due to initial ++ increment
+        Random rand = new Random();
+        // reactivation interval for nodes
+        final int minSleep = 1, maxSleep = 1; // 5-50
+        // modifier for generosity
+        final float epsilon0 = 0.01f, epsilon1 = 0.01f;
+
+        // extra data for nodes
+        final Map<Node, SocialBenefitNodeData> nodeDataMap = new HashMap<Node, SocialBenefitNodeData>();
+
+        // init: attach extra node data to all nodes
+        for (Node node : nodes) {
+            // default nodes have generosity=random and a random sleep
+            SocialBenefitNodeData data = new SocialBenefitNodeData(rand.nextFloat(), getRandomSleep(rand, minSleep, maxSleep), false);
+            nodeDataMap.put(node, data);
+            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+            row.setValue(sirCol, 0);
+        }
+        // init stubborn agents
+        for (int i = 0; i < stubbornAgents.size(); ++i) {
+            // agents with fixed generosity=0/1 and irrelevant sleep
+            SocialBenefitNodeData data = new SocialBenefitNodeData((i % 2 == 0 ? 0f : 1f), getRandomSleep(rand, minSleep, maxSleep), true);
+            nodeDataMap.put(stubbornAgents.get(i), data);
+            AttributeRow row = (AttributeRow) stubbornAgents.get(i).getNodeData().getAttributes();
+            row.setValue(sirCol, 1);
+        }
+
+        SocialBenefitNodeData nodeData;
+        Node[] neighbours;
+        float finalEffort = 0f, finalBenefit = 0f, avgProfit = 0f, minProfit = Float.MAX_VALUE, maxProfit = 0, finalProfit = 0f;
+
+        // long-term stop condition (1k)
+        while (iteration++ < MAX_ITERATIONS) {
+            // 1: iterate nodes update increase effort, benefit
+            for (Node node : nodes) {
+                // store current node data
+                nodeData = nodeDataMap.get(node);
+
+                // if has slept enough: wake up 
+                if (nodeData.sleep >= 0) { // !always!
+                    // get list of neighbours
+                    neighbours = graph.getNeighbors(node).toArray();
+
+                    if (neighbours.length > 0) {
+                        // invest 1-g effort in oneself
+                        nodeData.effort += (1 - nodeData.generosity);
+                        nodeData.benefit += nodeData.effort;
+
+                        // invest g/k effort in all neighbours                        
+                        nodeData.effort += nodeData.generosity / neighbours.length;
+                        // add g/k benefit to each neighbor
+                        for (Node neighbour : neighbours) {
+                            nodeDataMap.get(neighbour).benefit += nodeData.generosity / neighbours.length;
+                        }
+
+                        // generosity is contagious model
+                        if (nodeData.isStubborn) {
+                            ; // no change in generosity!
+                        } else {
+                            float _gen = 0f;
+                            for (Node neighbour : neighbours) {
+                                _gen += nodeDataMap.get(neighbour).generosity;
+                            }
+                            _gen /= neighbours.length;
+
+                            if (_gen > 0.5) {
+                                nodeData.generosity = Math.min(1, nodeData.generosity + epsilon1);
+                            } else {
+                                nodeData.generosity = Math.max(0, nodeData.generosity - epsilon0);
+                            }
+                        }
+
+                    } // node has neighbours
+                    else {
+                        // force node to invest all effort in oneself                        
+                        nodeData.effort += 1;
+                        nodeData.benefit += 1;
+                    }
+
+                    // reset sleep
+                    //nodeData.sleep = getRandomSleep(rand, minSleep, maxSleep);                                        
+                }// end node is not sleeping
+                /*else {
+                 nodeData.sleep--; // decrease sleep
+                 }*/
+
+
+            } // end one simulation iteration
+
+            // 2: iterate nodes update profit, state
+            for (Node node : nodes) {
+                // store current node data
+                nodeData = nodeDataMap.get(node);
+                nodeData.profit = nodeData.benefit - nodeData.effort;
+                // store node profit as attribute row
+                AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+                row.setValue(deltaCol, nodeData.generosity);
+
+                if (nodeData.isStubborn) {
+                    ; // no change in generosity!
+                } else {
+                    /*// people beome tired and needy
+                     if (nodeData.effort > 0.5) {
+                     nodeData.generosity = Math.max(0, nodeData.generosity - epsilon);
+                     } else {
+                     nodeData.generosity = Math.min(1, nodeData.generosity + epsilon);
+                     }
+                     // people become greedy and intolerant
+                     if (nodeData.benefit < 0.5) {
+                     nodeData.generosity = Math.max(0, nodeData.generosity - epsilon);
+                     } else {
+                     nodeData.generosity = Math.min(1, nodeData.generosity + epsilon);
+                     }*/
+                }
+            }
+
+            // run poll every x iterations
+            if (iteration % POLL_FREQUENCY == 0) {
+                // measure benefit, effort, profit                               
+                float avgE = 0f, avgB = 0f, avgP = 0f;
+                for (Node node : nodes) {
+                    nodeData = nodeDataMap.get(node);
+                    avgE += nodeData.effort;
+                    avgB += nodeData.benefit;
+                    avgP += nodeData.profit;
+                }
+
+                avgE /= nodes.size();
+                avgB /= nodes.size();
+                avgP /= nodes.size();
+
+                pw.println(avgE + "," + avgB + "," + avgP);
+
+                if (maxProfit < avgP) {
+                    maxProfit = avgP;
+                }
+                if (minProfit > avgP) {
+                    minProfit = avgP;
+                }
+                avgProfit += avgP;
+                if (iteration == MAX_ITERATIONS) {
+                    finalEffort = avgE;
+                    finalBenefit = avgB;
+                    finalProfit = avgP;
+                }
+            }
+
+            // 3: iterate nodes reset
+            for (Node node : nodes) {
+                // store current node data
+                nodeData = nodeDataMap.get(node);
+                nodeData.effort = 0;
+                nodeData.benefit = 0;
+            }
+
+        } // end simulation
+
+        errorReport += "Effort [" + String.format("%.3f", finalEffort) + "], Benefit [" + String.format("%.3f", finalBenefit)
+                + "], Profits [min:" + String.format("%.3f", minProfit) + "], [avg:"
+                + (String.format("%.3f", avgProfit / (MAX_ITERATIONS / POLL_FREQUENCY)))
+                + "], [max:" + String.format("%.3f", maxProfit) + "], [final:" + String.format("%.3f", finalProfit) + "] \n";
+    }
+// </editor-fold>    
+// <editor-fold defaultstate="collapsed" desc="Misc Area">
     private String errorReport = "";
     private String shortReport = "";
 
@@ -1208,6 +1385,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         this.progress = progressTicket;
 
 
+
+
     }
 
     public static enum BenchmarkCentrality {
@@ -1217,7 +1396,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
     public static enum DiffusionAlgorithm {
 
-        SIR, TOLERANCE, SIR_INDIVIDUAL, TOLERANCE_DEPLETE, TOLERANCE_COMPETE, TOLERANCE_EPIDEMIC
+        SIR, TOLERANCE, SIR_INDIVIDUAL, TOLERANCE_DEPLETE, TOLERANCE_COMPETE, TOLERANCE_EPIDEMIC, SOCIAL_PROFIT
     }
 
     private enum SIRType {
@@ -1230,7 +1409,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         KPOPULATION, ITERATIONS, OUTBREAKDIED
     }
 
-    private class ExtraNodeData {
+    private class OpinionNodeData {
 
         int sleep = 0;
         float tolerance = 1f;
@@ -1241,7 +1420,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // tolerance modification scaling used for tolerance (1)	 
         int scaling1 = 1;
 
-        ExtraNodeData(float opinion, float tolerance, int sleep, boolean isStubborn) {
+        OpinionNodeData(float opinion, float tolerance, int sleep, boolean isStubborn) {
             this.opinion = opinion;
             this.tolerance = tolerance;
             this.sleep = sleep;
@@ -1254,6 +1433,22 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
         boolean getNodeState(float otherState) {
             return otherState >= 0.5f;
+        }
+    }
+
+    private class SocialBenefitNodeData {
+
+        int sleep = 0; // set to random in constructor
+        float generosity = 0.5f; // set to value in constructor   
+        float effort, benefit, profit;
+        boolean isStubborn = false;
+
+        ;
+
+        SocialBenefitNodeData(float generosity, int sleep, boolean isStubborn) {
+            this.generosity = generosity;
+            this.sleep = sleep;
+            this.isStubborn = isStubborn;
         }
     }
 
