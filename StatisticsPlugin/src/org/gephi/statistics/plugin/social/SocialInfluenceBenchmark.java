@@ -61,7 +61,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * The interaction algorithm to be used for the diffusion process
      */
-    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.TOLERANCE_EPIDEMIC;
+    private DiffusionAlgorithm diffusionAlgorithm = DiffusionAlgorithm.SIR_EDGE_REMOVAL;
     /**
      * Stop condition for diffusion processes
      */
@@ -82,7 +82,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      * Absolute number of initial seeders; used instead of pSeeders only if
      * value is >0
      */
-    private double nSeeders = 50;
+    private double nSeeders = 10;
     /**
      * Activity period for tolerance deplete model
      */
@@ -96,13 +96,26 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      */
     private double kPopulation = 0.95;
     /*
+     * Number of iterations for infected node to become infectious
+     */
+    private double deltaIncubation = 5; // covid=5
+    /*
+     * Number of iterations for infected node to become a public threat
+     */
+    private double deltaThreat = 12; // covid=11-14
+    /*
      * Number of iterations until infected node becomes recovered
      */
-    private double deltaRecover = 10; // 10!
+    private double deltaRecover = 26; // 10! // covid=12+14=26 // DOI: 10.7326/M20-0504
     /**
-     * Probability to become infected after contacting an infected node
+     * Probability to become infected after contacting an infected node during
+     * the period [deltaIncubation, deltaRecover]
      */
     private double lambdaInfect = 0.05; // 0.05!
+    /**
+     * Probability to die instead of recovery
+     */
+    private double lambdaDie = 0.02; // 0.02!
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">   
     public void setCentrality(BenchmarkCentrality centrality) {
@@ -177,8 +190,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         return (Double) node.getAttributes().getValue(GraphDistance.B_PER_D_POWER);
     }
 
-    private SIRType getSIRType(Node node) {
-        return (SIRType) node.getAttributes().getValue(TAG_SIR_STATUS);
+    private SIRState getSIRType(Node node) {
+        return (SIRState) node.getAttributes().getValue(TAG_SIR_STATUS);
     }
 
     private int getDeltaInfect(Node node) {
@@ -259,8 +272,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // 2) sort nodes by centrality
         //      
 
-        //sortRandom(nodes);
-        sortByCentrality(nodes, centralityTag);
+        sortRandom(nodes);
+        //sortByCentrality(nodes, centralityTag);
 
         //
         // 3) infect top pSeeders% nodes
@@ -302,6 +315,9 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             switch (diffusionAlgorithm) {
                 case SIR:
                     runSIR(graph, nodes, infectiousList, sirCol, deltaCol);
+                    break;
+                case SIR_EDGE_REMOVAL:
+                    runSIRWithEdgeRemoval(graph, nodes, infectiousList, sirCol, deltaCol, pw);
                     break;
                 case SIR_INDIVIDUAL:
                     runSIRForEachNode(graph, nodes, infectiousList, sirCol, deltaCol, kendallCol);
@@ -406,7 +422,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     infectiousList.remove(node);
                     // set as recovered
                     AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
-                    row.setValue(sirCol, SIRType.RECOVERED);
+                    row.setValue(sirCol, SIRState.RECOVERED);
                     if (!recoveredList.contains(node)) {
                         recoveredList.add(node);
                     }
@@ -434,7 +450,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 // go throug all neighbors of each infected node
                 for (Node neighbor : graph.getNeighbors(node)) {
                     // if neighbor is susceptible
-                    if (getSIRType(neighbor).equals(SIRType.SUSCEPTIBLE)) {
+                    if (getSIRType(neighbor).equals(SIRState.SUSCEPTIBLE)) {
                         if (rand.nextDouble() < lambdaInfect) {
                             if (!changeToInfectious.contains(neighbor)) {
                                 changeToInfectious.add(neighbor);
@@ -453,7 +469,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             for (Node node : changeToInfectious) {
                 // set as infected
                 AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
-                row.setValue(sirCol, SIRType.INFECTED);
+                row.setValue(sirCol, SIRState.INFECTED);
                 row.setValue(deltaCol, 0);
 
                 if (!infectiousList.contains(node)) {
@@ -475,8 +491,212 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         _coverage += (100.0 * recoveredList.size() / nodes.size());
     }
 
-    // runs the classic tolerance model with either single (one random neighbour) or complex (average all neighbours) diffusion
-    // and updates tolerance according to opinjon change patterns
+    /// Modified SIR for covid19 where edges will be removed in a centralized or decentralized manner
+    private void runSIRWithEdgeRemoval(HierarchicalGraph graph, List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol, PrintWriter pw) {
+        // whether to use centralized or decentralized edge removal approaches
+        final boolean CENTRALIZED = true, DECENTRALIZED = true;
+        // random edges (%) to remove from each node in centralized approach        
+        double ratioEdgesToRemove = pSeeders; // 0.85
+
+        int iteration = 0;
+        Random rand = new Random();
+        EndCondition endCondition = EndCondition.ITERATIONS;
+        List<Node> changeToInfectious = new ArrayList<Node>();
+        List<Node> recoveredList = new ArrayList<Node>();
+        List<Node> deadList = new ArrayList<Node>();
+
+        List<Integer> recCounter = new ArrayList<Integer>();
+        List<Integer> dedCounter = new ArrayList<Integer>();
+        List<Integer> infCounter = new ArrayList<Integer>();
+
+        final Map<Node, SIRNodeData> nodeDataMap = new HashMap<Node, SIRNodeData>();
+        SIRNodeData nodeData, neighborData;
+        Node[] neighbours;
+        Node neighbour;
+        Edge e1, e2;
+
+        // init: attach extra node data to all nodes
+        for (Node node : nodes) {
+            // default nodes have opinion=0, full tolerance and are non-stubborn
+            SIRNodeData data = new SIRNodeData(SIRState.SUSCEPTIBLE);
+            nodeDataMap.put(node, data);
+            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+            row.setValue(sirCol, 0);
+        }
+        for (Node node : infectiousList) {
+            // spreader nodes always have opinion = 0 or 1 (opposite), irrelevant tolerance and are stubborn
+            SIRNodeData data = new SIRNodeData(SIRState.INFECTED);
+            nodeDataMap.put(node, data);
+            AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+            row.setValue(sirCol, 1);
+        }
+
+        // remove edges in centralized mode
+        if (CENTRALIZED) {
+            List<Edge> edgesToRemove = new ArrayList<Edge>();
+            // mark all edges to be removed at random
+            for (Edge edge : graph.getEdges()) {
+                if (rand.nextDouble() < ratioEdgesToRemove) {
+                    edgesToRemove.add(edge);
+                }
+            }
+            // remove all marked edges
+            for (Edge edge : edgesToRemove) {
+                graph.removeEdge(edge);
+            }
+        }
+
+        while (++iteration < MAX_ITERATIONS) {
+            // any node infected longer than delta will become recovered
+            for (Node node : infectiousList.toArray(new Node[]{})) {
+                //if (getDeltaInfect(node) >= deltaRecover) {
+                nodeData = nodeDataMap.get(node);
+                if (nodeData.infectionCounter >= deltaRecover) {
+                    // remove from infectious list
+                    infectiousList.remove(node);
+
+                    AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+                    // probability for node to die
+                    if (rand.nextDouble() < lambdaDie) {
+                        row.setValue(sirCol, SIRState.DEAD);
+                        nodeData.sirState = SIRState.DEAD;
+                        if (!deadList.contains(node)) {
+                            deadList.add(node);
+                        }
+                    } else { // revovery probability: 1 - lambdaDie
+                        row.setValue(sirCol, SIRState.RECOVERED);
+                        nodeData.sirState = SIRState.RECOVERED;
+                        if (!recoveredList.contains(node)) {
+                            recoveredList.add(node);
+                        }
+                    }
+                }
+            }
+
+            // check if outbreak died
+            if (infectiousList.isEmpty()) {
+                endCondition = EndCondition.OUTBREAKDIED;
+                break;
+            }
+
+            // check how many nodes are reocvered
+            if (recoveredList.size() + deadList.size() >= kPopulation * nodes.size()) {
+                endCondition = EndCondition.KPOPULATION;
+                break;
+            }
+
+            recCounter.add(recoveredList.size());
+            dedCounter.add(deadList.size());
+            infCounter.add(infectiousList.size());
+
+            // infect neighobrs
+            changeToInfectious.clear();
+            for (Node node : infectiousList) {
+                nodeData = nodeDataMap.get(node);
+                if (nodeData.infectionCounter >= deltaIncubation) { // infect only if incubation period has passed
+                    // go throug all neighbors of each infected node
+                    for (Node neighbor : graph.getNeighbors(node)) {
+                        // if neighbor is susceptible
+                        //if (getSIRType(neighbor).equals(SIRState.SUSCEPTIBLE)) {
+                        neighborData = nodeDataMap.get(neighbor);
+                        if (neighborData.sirState.equals(SIRState.SUSCEPTIBLE)) {
+                            if (rand.nextDouble() < lambdaInfect) { // probability ot become infected
+                                if (!changeToInfectious.contains(neighbor)) {
+                                    changeToInfectious.add(neighbor);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // update infectious lifetime
+                AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+                int delta = getDeltaInfect(node);
+                row.setValue(deltaCol, delta + 1);
+                nodeData.infectionCounter++;
+            }
+
+            // self isolate if infected in vicinity
+            if (DECENTRALIZED) {
+                for (Node node : nodes) {
+                    nodeData = nodeDataMap.get(node);
+                    // 1. only infected (>=deltaThreat) nodes will autosiolate
+                    if (nodeData.sirState.equals(SIRState.INFECTED) && nodeData.infectionCounter >= deltaThreat) {
+                        // remove edges ratio <-- skin%
+                        List<Edge> edgesToRemove = new ArrayList<Edge>();
+                        // mark all incident edges to be removed at random                                
+                        for (Edge edge : graph.getEdges(node)) {
+                            if (rand.nextDouble() < pSeeders) {
+                                edgesToRemove.add(edge);
+                            }
+                        }
+                        // remove all marked edges                                    
+                        for (Edge edge : edgesToRemove) {
+                            graph.removeEdge(edge);
+                        }
+                        edgesToRemove = null;
+                    }
+
+                    // 2. only neighbors of infected (>=deltaThreat) nodes will isolate themselves from the infected node
+                    if (nodeData.sirState.equals(SIRState.SUSCEPTIBLE)) {
+                        for (Node neighbor : graph.getNeighbors(node).toArray()) {
+                            neighborData = nodeDataMap.get(neighbor);
+                            // if neighbour is infected and a threat detach from him wtih p%
+                            if (neighborData.sirState.equals(SIRState.INFECTED) && neighborData.infectionCounter >= deltaThreat) {
+                                // try to detach from infected node
+                                if (rand.nextDouble() < pSeeders) {
+                                    e1 = graph.getEdge(node, neighbor);
+                                    e2 = graph.getEdge(neighbor, node);
+                                    if (e1 != null) {
+                                        graph.removeEdge(e1);
+                                    }
+                                    if (e2 != null) {
+                                        graph.removeEdge(e2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // change nodes to infectious
+            for (Node node : changeToInfectious) {
+                nodeData = nodeDataMap.get(node);
+                // set as infected
+                AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
+                row.setValue(sirCol, SIRState.INFECTED);
+                row.setValue(deltaCol, 0);
+                nodeData.sirState = SIRState.INFECTED;
+                nodeData.infectionCounter = 0;
+
+                if (!infectiousList.contains(node)) {
+                    infectiousList.add(node);
+                }
+            }
+        } // end iteration
+        errorReport = "Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)\n";
+        errorReport += "Died: " + deadList.size() + " (" + (100.0 * deadList.size() / nodes.size()) + " %)\n";
+        errorReport += "Ended after " + iteration + " iterations\n";
+        errorReport += "End condition: " + endCondition.toString() + "\n\n";
+        errorReport += "Recovered\n";
+        for (int rec : recCounter) {
+            errorReport += rec + "\n";
+        }
+
+        pw.println(
+                "Infected,Recovered,Died");
+        for (int i = 0;
+                i < recCounter.size();
+                ++i) {
+            pw.println(1f * infCounter.get(i) / nodes.size() + "," + 1f * recCounter.get(i) / nodes.size() + "," + 1f * dedCounter.get(i) / nodes.size());
+        }
+        _iterations += iteration;
+        _coverage += (100.0 * (recoveredList.size() + deadList.size()) / nodes.size());
+    }
+// runs the classic tolerance model with either single (one random neighbour) or complex (average all neighbours) diffusion
+// and updates tolerance according to opinjon change patterns
+
     private void runTolerance(HierarchicalGraph graph, List<Node> nodes, List<Node> stubbornAgents, AttributeColumn sirCol, AttributeColumn deltaCol) {
         int iteration = -1; // due to initial ++ increment
         Random rand = new Random();
@@ -740,7 +960,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                                 }
                                 skin /* = nodeData.opinion; */ /= (1f * neighbours.length);
 
-                                if (skin > 0.5) {
+                                if (skin > 0.0) {
                                     // remove edges ratio <-- skin%
                                     List<Edge> edgesToRemove = new ArrayList<Edge>();
                                     // mark all incident edges to be removed at random                                
@@ -1074,12 +1294,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             // set all nodes to susceptible except node 'i' which is infected (single source)
             for (Node node : nodes) {
                 row = (AttributeRow) node.getNodeData().getAttributes();
-                row.setValue(sirCol, SIRType.SUSCEPTIBLE);
+                row.setValue(sirCol, SIRState.SUSCEPTIBLE);
             }
 
             Node source = nodes.get(currentIndex);
             row = (AttributeRow) source.getNodeData().getAttributes();
-            row.setValue(sirCol, SIRType.INFECTED);
+            row.setValue(sirCol, SIRState.INFECTED);
             row.setValue(deltaCol, 0);
             infectiousList.clear(); // clean previous
             infectiousList.add(source); // add only this node
@@ -1098,7 +1318,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                         infectiousList.remove(node);
                         // set as recovered
                         row = (AttributeRow) node.getNodeData().getAttributes();
-                        row.setValue(sirCol, SIRType.RECOVERED);
+                        row.setValue(sirCol, SIRState.RECOVERED);
                         if (!recoveredList.contains(node)) {
                             recoveredList.add(node);
                         }
@@ -1117,7 +1337,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     // go throug all neighbors of eahc infected node
                     for (Node neighbor : graph.getNeighbors(node)) {
                         // if neighbor is susceptible
-                        if (getSIRType(neighbor).equals(SIRType.SUSCEPTIBLE)) {
+                        if (getSIRType(neighbor).equals(SIRState.SUSCEPTIBLE)) {
                             if (rand.nextDouble() < lambdaInfect) {
                                 if (!changeToInfectious.contains(neighbor)) {
                                     changeToInfectious.add(neighbor);
@@ -1136,7 +1356,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 for (Node node : changeToInfectious) {
                     // set as infected
                     row = (AttributeRow) node.getNodeData().getAttributes();
-                    row.setValue(sirCol, SIRType.INFECTED);
+                    row.setValue(sirCol, SIRState.INFECTED);
                     row.setValue(deltaCol, 0);
 
                     if (!infectiousList.contains(node)) {
@@ -1387,6 +1607,16 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
 
 
+
+
+
+
+
+
+
+
+
+
     }
 
     public static enum BenchmarkCentrality {
@@ -1396,12 +1626,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
     public static enum DiffusionAlgorithm {
 
-        SIR, TOLERANCE, SIR_INDIVIDUAL, TOLERANCE_DEPLETE, TOLERANCE_COMPETE, TOLERANCE_EPIDEMIC, SOCIAL_PROFIT
+        SIR, TOLERANCE, SIR_INDIVIDUAL, TOLERANCE_DEPLETE, TOLERANCE_COMPETE, TOLERANCE_EPIDEMIC, SOCIAL_PROFIT, SIR_EDGE_REMOVAL
     }
 
-    private enum SIRType {
+    private enum SIRState {
 
-        SUSCEPTIBLE, INFECTED, RECOVERED
+        SUSCEPTIBLE, INFECTED, RECOVERED, DEAD
     }
 
     private enum EndCondition {
@@ -1449,6 +1679,16 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             this.generosity = generosity;
             this.sleep = sleep;
             this.isStubborn = isStubborn;
+        }
+    }
+
+    private class SIRNodeData {
+
+        SIRState sirState;
+        int infectionCounter = 0;
+
+        SIRNodeData(SIRState sirState) {
+            this.sirState = sirState;
         }
     }
 
@@ -1546,11 +1786,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
             // set attributes for top seeder nodes
             if (i < (nSeeders > 0 ? nSeeders : (Math.ceil(pSeeders * nodes.size())))) {
-                row.setValue(sirCol, SIRType.INFECTED);
+                row.setValue(sirCol, SIRState.INFECTED);
                 row.setValue(deltaCol, 0);
                 infectiousList.add(node);
             } else {
-                row.setValue(sirCol, SIRType.SUSCEPTIBLE);
+                row.setValue(sirCol, SIRState.SUSCEPTIBLE);
             }
         }
     }
@@ -1603,11 +1843,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
             // set attributes for top seeder nodes
             if (i < (nSeeders > 0 ? nSeeders : (Math.ceil(pSeeders * nodes.size())))) {
-                row.setValue(sirCol, SIRType.INFECTED);
+                row.setValue(sirCol, SIRState.INFECTED);
                 row.setValue(deltaCol, 0);
                 infectiousList.add(node);
             } else {
-                row.setValue(sirCol, SIRType.SUSCEPTIBLE);
+                row.setValue(sirCol, SIRState.SUSCEPTIBLE);
             }
         }
     }
