@@ -86,7 +86,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Activity period for tolerance deplete model
      */
-    private int injectPeriod = 100; // 200
+    private int injectPeriod = 40; // 200
     /**
      * Active ratio for tolerance deplete model
      */
@@ -119,7 +119,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Probability to become susceptible again after infection period has ended
      */
-    private double lambdaSusceptible = 0.0; // 0.1!
+    private double lambdaSusceptible = 0.0; // 0.1!        
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">   
     public void setCentrality(BenchmarkCentrality centrality) {
@@ -498,10 +498,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /// Modified SIR for covid19 where edges will be removed in a centralized or decentralized manner
     private void runSIRWithEdgeRemoval(HierarchicalGraph graph, List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol, PrintWriter pw) {
         // whether to use centralized or decentralized edge removal approaches
-        final boolean CENTRALIZED = true, DECENTRALIZED = false;
-        final boolean AUTOISOLATE = true, ISOLATE = false;
+        final boolean CENTRALIZED = true, DECENTRALIZED = true;
+        final boolean AUTOISOLATE = true, ISOLATE = true;
         // random edges (%) to remove from each node in centralized approach        
         double ratioEdgesToRemove = pSeeders; // 0.85
+        int delayStrategy = injectPeriod;
+        boolean hasAppliedCentralizedStrategy = false;
 
         int iteration = 0;
         Random rand = new Random();
@@ -536,22 +538,27 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         }
         degCounter.add(getMaximumDegree(graph));
 
-        // remove edges in centralized mode
-        if (CENTRALIZED) {
-            List<Edge> edgesToRemove = new ArrayList<Edge>();
-            // mark all edges to be removed at random
-            for (Edge edge : graph.getEdges()) {
-                if (rand.nextDouble() < ratioEdgesToRemove) {
-                    edgesToRemove.add(edge);
+        while (++iteration < MAX_ITERATIONS) {
+
+            if (iteration >= delayStrategy && !hasAppliedCentralizedStrategy) {
+                // remove edges in centralized mode
+                if (CENTRALIZED) {
+                    List<Edge> edgesToRemove = new ArrayList<Edge>();
+                    // mark all edges to be removed at random
+                    for (Edge edge : graph.getEdges()) {
+                        if (rand.nextDouble() < ratioEdgesToRemove) {
+                            edgesToRemove.add(edge);
+                        }
+                    }
+                    // remove all marked edges
+                    for (Edge edge : edgesToRemove) {
+                        graph.removeEdge(edge);
+                    }
+                    hasAppliedCentralizedStrategy = true;
                 }
             }
-            // remove all marked edges
-            for (Edge edge : edgesToRemove) {
-                graph.removeEdge(edge);
-            }
-        }
 
-        while (++iteration < MAX_ITERATIONS) {
+
             // any node infected longer than delta will become recovered/dead/susceptible
             for (Node node : infectiousList.toArray(new Node[]{})) {
                 //if (getDeltaInfect(node) >= deltaRecover) {
@@ -628,7 +635,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             }
 
             // self isolate if infected in vicinity
-            if (DECENTRALIZED) {
+            if (DECENTRALIZED && iteration >= delayStrategy) {
                 for (Node node : nodes) {
                     nodeData = nodeDataMap.get(node);
                     // 1. only infected (>=deltaThreat) nodes will autosiolate
