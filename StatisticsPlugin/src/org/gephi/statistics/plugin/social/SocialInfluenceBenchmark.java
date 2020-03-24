@@ -116,6 +116,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      * Probability to die instead of recovery
      */
     private double lambdaDie = 0.02; // 0.02!
+    /**
+     * Probability to become susceptible again after infection period has ended
+     */
+    private double lambdaSusceptible = 0.0; // 0.1!
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">   
     public void setCentrality(BenchmarkCentrality centrality) {
@@ -494,7 +498,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /// Modified SIR for covid19 where edges will be removed in a centralized or decentralized manner
     private void runSIRWithEdgeRemoval(HierarchicalGraph graph, List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol, PrintWriter pw) {
         // whether to use centralized or decentralized edge removal approaches
-        final boolean CENTRALIZED = true, DECENTRALIZED = true;
+        final boolean CENTRALIZED = true, DECENTRALIZED = false;
+        final boolean AUTOISOLATE = true, ISOLATE = false;
         // random edges (%) to remove from each node in centralized approach        
         double ratioEdgesToRemove = pSeeders; // 0.85
 
@@ -508,11 +513,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         List<Integer> recCounter = new ArrayList<Integer>();
         List<Integer> dedCounter = new ArrayList<Integer>();
         List<Integer> infCounter = new ArrayList<Integer>();
+        List<Integer> degCounter = new ArrayList<Integer>();
 
         final Map<Node, SIRNodeData> nodeDataMap = new HashMap<Node, SIRNodeData>();
         SIRNodeData nodeData, neighborData;
-        Node[] neighbours;
-        Node neighbour;
         Edge e1, e2;
 
         // init: attach extra node data to all nodes
@@ -530,6 +534,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 1);
         }
+        degCounter.add(getMaximumDegree(graph));
 
         // remove edges in centralized mode
         if (CENTRALIZED) {
@@ -547,7 +552,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         }
 
         while (++iteration < MAX_ITERATIONS) {
-            // any node infected longer than delta will become recovered
+            // any node infected longer than delta will become recovered/dead/susceptible
             for (Node node : infectiousList.toArray(new Node[]{})) {
                 //if (getDeltaInfect(node) >= deltaRecover) {
                 nodeData = nodeDataMap.get(node);
@@ -563,7 +568,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                         if (!deadList.contains(node)) {
                             deadList.add(node);
                         }
-                    } else { // revovery probability: 1 - lambdaDie
+                    } else if (rand.nextDouble() < lambdaSusceptible) {
+                        row.setValue(sirCol, SIRState.SUSCEPTIBLE);
+                        row.setValue(sirCol, 0);
+                        nodeData.sirState = SIRState.SUSCEPTIBLE;
+                        nodeData.infectionCounter = 0;
+                    } else { // revovery probability: 1 - lambdaDie - lambdaSusceptible
                         row.setValue(sirCol, SIRState.RECOVERED);
                         nodeData.sirState = SIRState.RECOVERED;
                         if (!recoveredList.contains(node)) {
@@ -588,6 +598,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             recCounter.add(recoveredList.size());
             dedCounter.add(deadList.size());
             infCounter.add(infectiousList.size());
+            degCounter.add(getMaximumDegree(graph));
 
             // infect neighobrs
             changeToInfectious.clear();
@@ -621,37 +632,41 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 for (Node node : nodes) {
                     nodeData = nodeDataMap.get(node);
                     // 1. only infected (>=deltaThreat) nodes will autosiolate
-                    if (nodeData.sirState.equals(SIRState.INFECTED) && nodeData.infectionCounter >= deltaThreat) {
-                        // remove edges ratio <-- skin%
-                        List<Edge> edgesToRemove = new ArrayList<Edge>();
-                        // mark all incident edges to be removed at random                                
-                        for (Edge edge : graph.getEdges(node)) {
-                            if (rand.nextDouble() < pSeeders) {
-                                edgesToRemove.add(edge);
+                    if (AUTOISOLATE) {
+                        if (nodeData.sirState.equals(SIRState.INFECTED) && nodeData.infectionCounter >= deltaThreat) {
+                            // remove edges ratio <-- skin%
+                            List<Edge> edgesToRemove = new ArrayList<Edge>();
+                            // mark all incident edges to be removed at random                                
+                            for (Edge edge : graph.getEdges(node)) {
+                                if (rand.nextDouble() < pSeeders) {
+                                    edgesToRemove.add(edge);
+                                }
                             }
+                            // remove all marked edges                                    
+                            for (Edge edge : edgesToRemove) {
+                                graph.removeEdge(edge);
+                            }
+                            edgesToRemove = null;
                         }
-                        // remove all marked edges                                    
-                        for (Edge edge : edgesToRemove) {
-                            graph.removeEdge(edge);
-                        }
-                        edgesToRemove = null;
                     }
 
                     // 2. only neighbors of infected (>=deltaThreat) nodes will isolate themselves from the infected node
-                    if (nodeData.sirState.equals(SIRState.SUSCEPTIBLE)) {
-                        for (Node neighbor : graph.getNeighbors(node).toArray()) {
-                            neighborData = nodeDataMap.get(neighbor);
-                            // if neighbour is infected and a threat detach from him wtih p%
-                            if (neighborData.sirState.equals(SIRState.INFECTED) && neighborData.infectionCounter >= deltaThreat) {
-                                // try to detach from infected node
-                                if (rand.nextDouble() < pSeeders) {
-                                    e1 = graph.getEdge(node, neighbor);
-                                    e2 = graph.getEdge(neighbor, node);
-                                    if (e1 != null) {
-                                        graph.removeEdge(e1);
-                                    }
-                                    if (e2 != null) {
-                                        graph.removeEdge(e2);
+                    if (ISOLATE) {
+                        if (nodeData.sirState.equals(SIRState.SUSCEPTIBLE)) {
+                            for (Node neighbor : graph.getNeighbors(node).toArray()) {
+                                neighborData = nodeDataMap.get(neighbor);
+                                // if neighbour is infected and a threat detach from him wtih p%
+                                if (neighborData.sirState.equals(SIRState.INFECTED) && neighborData.infectionCounter >= deltaThreat) {
+                                    // try to detach from infected node
+                                    if (rand.nextDouble() < pSeeders) {
+                                        e1 = graph.getEdge(node, neighbor);
+                                        if (e1 != null) {
+                                            graph.removeEdge(e1);
+                                        }
+                                        e2 = graph.getEdge(neighbor, node);
+                                        if (e2 != null) {
+                                            graph.removeEdge(e2);
+                                        }
                                     }
                                 }
                             }
@@ -684,12 +699,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             errorReport += rec + "\n";
         }
 
-        pw.println(
-                "Infected,Recovered,Died");
-        for (int i = 0;
-                i < recCounter.size();
-                ++i) {
-            pw.println(1f * infCounter.get(i) / nodes.size() + "," + 1f * recCounter.get(i) / nodes.size() + "," + 1f * dedCounter.get(i) / nodes.size());
+        pw.println("Infected,Recovered,Died,MaxDegree");
+        for (int i = 0; i < recCounter.size(); ++i) {
+            pw.println(1f * infCounter.get(i) / nodes.size() + "," + 1f * recCounter.get(i) / nodes.size() + ","
+                    + 1f * dedCounter.get(i) / nodes.size() + "," + degCounter.get(i));
         }
         _iterations += iteration;
         _coverage += (100.0 * (recoveredList.size() + deadList.size()) / nodes.size());
@@ -1571,7 +1584,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 + "], [max:" + String.format("%.3f", maxProfit) + "], [final:" + String.format("%.3f", finalProfit) + "] \n";
     }
 // </editor-fold>    
-// <editor-fold defaultstate="collapsed" desc="Misc Area">
+    // <editor-fold defaultstate="collapsed" desc="Misc Area">
     private String errorReport = "";
     private String shortReport = "";
 
@@ -1603,19 +1616,6 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      */
     public void setProgressTicket(ProgressTicket progressTicket) {
         this.progress = progressTicket;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     }
 
@@ -1768,6 +1768,20 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 return rand.nextInt(3) - 1; //[-1,0,1]
             }
         });
+    }
+
+    // Get maximum degree from a graph     
+    private int getMaximumDegree(HierarchicalGraph graph) {
+        int degree = 0, maxDegree = 0;;
+
+        for (Node node : graph.getNodes()) {
+            degree = graph.getDegree(node);
+            if (degree > maxDegree) {
+                maxDegree = degree;
+            }
+        }
+
+        return maxDegree;
     }
 
     /**
