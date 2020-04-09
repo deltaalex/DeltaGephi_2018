@@ -37,7 +37,7 @@ import org.openide.util.NbBundle;
  * @author Alexander
  */
 public class SocialInfluenceBenchmark implements Statistics, LongTask {
-
+    
     public static final String TAG_SIR_STATUS = "SIR_status";
     public static final String TAG_DELTA_INFECT = "Delta_infect";
     public static final String TAG_KENDALL_SCORE = "Kendall_score";
@@ -82,11 +82,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      * Absolute number of initial seeders; used instead of pSeeders only if
      * value is >0
      */
-    private double nSeeders = 10;
+    private double nSeeders = 1;
     /**
      * Activity period for tolerance deplete model
      */
-    private int injectPeriod = 40; // 200
+    private int injectPeriod = 100; // 200
     /**
      * Active ratio for tolerance deplete model
      */
@@ -115,7 +115,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Probability to die instead of recovery
      */
-    private double lambdaDie = 0.02; // 0.02!
+    private double lambdaDie = 0.0; // 0.02!
     /**
      * Probability to become susceptible again after infection period has ended
      */
@@ -125,94 +125,94 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     public void setCentrality(BenchmarkCentrality centrality) {
         this.centrality = centrality;
     }
-
+    
     public void setPSeeders(double pSeeders) {
         this.pSeeders = pSeeders;
     }
-
+    
     public void setNSeeders(double nSeeders) {
         this.nSeeders = nSeeders;
     }
-
+    
     public void setInjectPeriod(int injectPeriod) {
         this.injectPeriod = injectPeriod;
     }
-
+    
     public void setFillingFactor(double fillingFactor) {
         this.fillingFactor = fillingFactor;
     }
-
+    
     public BenchmarkCentrality getCentrality() {
         return centrality;
     }
-
+    
     public double getPSeeders() {
         return pSeeders;
     }
-
+    
     public double getNSeeders() {
         return nSeeders;
     }
-
+    
     public int getInjectPeriod() {
         return injectPeriod;
     }
-
+    
     public double getFillingFactor() {
         return fillingFactor;
     }
-
+    
     private Integer getDegree(Node node) {
         return (Integer) node.getAttributes().getValue(Degree.DEGREE);
     }
-
+    
     private Double getBetweenness(Node node) {
         return (Double) node.getAttributes().getValue(GraphDistance.BETWEENNESS);
     }
-
+    
     private Double getEigenvector(Node node) {
         return (Double) node.getAttributes().getValue(EigenvectorCentrality.EIGENVECTOR);
     }
-
+    
     private Double getCloseness(Node node) {
         return (Double) node.getAttributes().getValue(GraphDistance.CLOSENESS);
     }
-
+    
     private Double getPageRank(Node node) {
         return (Double) node.getAttributes().getValue(PageRank.PAGERANK);
     }
-
+    
     private Double getHitsAuthority(Node node) {
         return (Double) node.getAttributes().getValue(Hits.AUTHORITY);
     }
-
+    
     private Double getBDPower(Node node) {
         return (Double) node.getAttributes().getValue(GraphDistance.B_TIMES_D_POWER);
     }
-
+    
     private Double getBDInfluence(Node node) {
         return (Double) node.getAttributes().getValue(GraphDistance.B_PER_D_POWER);
     }
-
+    
     private SIRState getSIRType(Node node) {
         return (SIRState) node.getAttributes().getValue(TAG_SIR_STATUS);
     }
-
+    
     private int getDeltaInfect(Node node) {
         return (Integer) node.getAttributes().getValue(TAG_DELTA_INFECT);
     }
-
+    
     private int getKendallScore(Node node) {
         return (Integer) node.getAttributes().getValue(TAG_KENDALL_SCORE);
     }
-
+    
     private Double getCentrality(Node node) {
         if (node.getAttributes().getValue(centralityTag) instanceof Double) {
             return (Double) node.getAttributes().getValue(centralityTag);
-
+            
         } else if (node.getAttributes().getValue(centralityTag) instanceof Float) {
             return Double.valueOf((Float) node.getAttributes().getValue(centralityTag));
-
+            
         } else {
             return Double.valueOf((Integer) node.getAttributes().getValue(centralityTag));
         }
@@ -230,7 +230,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         //errorReport += "\nAverage time: " + 1f * _iterations / REPEAT;
         //}
     }
-
+    
     public void execute(HierarchicalGraph graph, AttributeModel attributeModel) {
 
         // atributes
@@ -283,21 +283,21 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // 3) infect top pSeeders% nodes
         //                
         List<Node> infectiousList = new ArrayList<Node>();
-
+        
         if (!diffusionAlgorithm.equals(DiffusionAlgorithm.TOLERANCE_COMPETE)) {
             initNodes(nodes, infectiousList, sirCol, deltaCol);
         } else {
             List<Node> infectiousListA = new ArrayList<Node>();
             List<Node> infectiousListB = new ArrayList<Node>();
-
+            
             centralityTag = getCentralityTag(BenchmarkCentrality.LEADERRANK);  // dbg  
             sortByCentrality(nodes, centralityTag);
             initNodesByColoring(graph, nodes, infectiousListA, sirCol, deltaCol);
-
+            
             centralityTag = getCentralityTag(BenchmarkCentrality.BETWEENNESS);  // dbg  
             sortByCentrality(nodes, centralityTag);
             initNodesByColoring(graph, nodes, infectiousListB, sirCol, deltaCol);
-
+            
             infectiousList = mergeOpinions(infectiousListA, infectiousListB);
         }
 
@@ -315,7 +315,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             }
             File tmp = new File(outputFolder.getAbsolutePath() + "/tolerance_benchmark" + new Date().getTime() + ".csv");
             PrintWriter pw = new PrintWriter(tmp);
-
+            
             switch (diffusionAlgorithm) {
                 case SIR:
                     runSIR(graph, nodes, infectiousList, sirCol, deltaCol);
@@ -400,10 +400,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         } catch (FileNotFoundException ex) {
             Exceptions.printStackTrace(ex);
         }
-
+        
         progress.switchToDeterminate(100);
         progress.finish();
-
+        
         graph.readUnlockAll();
     }
     private float _iterations = 0f, _coverage = 0f; // dbg
@@ -414,10 +414,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         EndCondition endCondition = EndCondition.ITERATIONS;
         List<Node> changeToInfectious = new ArrayList<Node>();
         List<Node> recoveredList = new ArrayList<Node>();
-
+        
         List<Integer> recCounter = new ArrayList<Integer>();
         List<Integer> infCounter = new ArrayList<Integer>();
-
+        
         while (++iteration < 10000) {
             // any node infected longer than delta will become recovered
             for (Node node : infectiousList.toArray(new Node[]{})) {
@@ -444,7 +444,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 endCondition = EndCondition.KPOPULATION;
                 break;
             }
-
+            
             recCounter.add(recoveredList.size());
             infCounter.add(infectiousList.size());
 
@@ -475,22 +475,22 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
                 row.setValue(sirCol, SIRState.INFECTED);
                 row.setValue(deltaCol, 0);
-
+                
                 if (!infectiousList.contains(node)) {
                     infectiousList.add(node);
                 }
             }
         }
-
+        
         errorReport = "Recovered: " + recoveredList.size() + " (" + (100.0 * recoveredList.size() / nodes.size()) + " %)\n";
         errorReport += "Ended after " + iteration + " iterations\n";
         errorReport += "End condition: " + endCondition.toString() + "\n\n";
-
+        
         errorReport += "Recovered\n";
         for (int rec : recCounter) {
             errorReport += rec + "\n";
         }
-
+        
         _iterations += iteration;
         _coverage += (100.0 * recoveredList.size() / nodes.size());
     }
@@ -502,21 +502,27 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         final boolean AUTOISOLATE = true, ISOLATE = true;
         // random edges (%) to remove from each node in centralized approach        
         double ratioEdgesToRemove = pSeeders; // 0.85
-        int delayStrategy = injectPeriod;
+        int delayStrategy = 0;//injectPeriod;
+        //int reactionTimes[] = {20, 40, 60, 80};  // iteration times when e is to be increased        
+        // +e increment to be applied at each reaction time
+        //double reactionE[] = {0.25, 0.33, 0.5, 0.6}; // 0.25-0.5-0.75-0.9
+        //double reactionE[] = {0.2, 0.25, 0.33, 0.5}; // 0.2-0.4-0.6-0.8
         boolean hasAppliedCentralizedStrategy = false;
-
+        
         int iteration = 0;
+        //int reaction = 0; // reaction counter
         Random rand = new Random();
         EndCondition endCondition = EndCondition.ITERATIONS;
         List<Node> changeToInfectious = new ArrayList<Node>();
         List<Node> recoveredList = new ArrayList<Node>();
         List<Node> deadList = new ArrayList<Node>();
-
+        
         List<Integer> recCounter = new ArrayList<Integer>();
         List<Integer> dedCounter = new ArrayList<Integer>();
         List<Integer> infCounter = new ArrayList<Integer>();
         List<Integer> degCounter = new ArrayList<Integer>();
-
+        List<Double> dnsCounter = new ArrayList<Double>();
+        
         final Map<Node, SIRNodeData> nodeDataMap = new HashMap<Node, SIRNodeData>();
         SIRNodeData nodeData, neighborData;
         Edge e1, e2;
@@ -537,16 +543,17 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             row.setValue(sirCol, 1);
         }
         degCounter.add(getMaximumDegree(graph));
-
+        
         while (++iteration < MAX_ITERATIONS) {
-
+            
             if (iteration >= delayStrategy && !hasAppliedCentralizedStrategy) {
+                /*if (reaction < 4 && iteration == reactionTimes[reaction]) {*/
                 // remove edges in centralized mode
                 if (CENTRALIZED) {
                     List<Edge> edgesToRemove = new ArrayList<Edge>();
                     // mark all edges to be removed at random
                     for (Edge edge : graph.getEdges()) {
-                        if (rand.nextDouble() < ratioEdgesToRemove) {
+                        if (rand.nextDouble() < ratioEdgesToRemove /*reactionE[reaction]*/) {
                             edgesToRemove.add(edge);
                         }
                     }
@@ -555,7 +562,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                         graph.removeEdge(edge);
                     }
                     hasAppliedCentralizedStrategy = true;
-                }
+                    //reaction++;
+                }                
             }
 
 
@@ -566,7 +574,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 if (nodeData.infectionCounter >= deltaRecover) {
                     // remove from infectious list
                     infectiousList.remove(node);
-
+                    
                     AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
                     // probability for node to die
                     if (rand.nextDouble() < lambdaDie) {
@@ -601,11 +609,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 endCondition = EndCondition.KPOPULATION;
                 break;
             }
-
+            
             recCounter.add(recoveredList.size());
             dedCounter.add(deadList.size());
             infCounter.add(infectiousList.size());
             degCounter.add(getMaximumDegree(graph));
+            dnsCounter.add(getGraphDensity(graph));
 
             // infect neighobrs
             changeToInfectious.clear();
@@ -636,6 +645,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
 
             // self isolate if infected in vicinity
             if (DECENTRALIZED && iteration >= delayStrategy) {
+                //if (DECENTRALIZED && reaction < 4 && iteration >= reactionTimes[reaction]) {
                 for (Node node : nodes) {
                     nodeData = nodeDataMap.get(node);
                     // 1. only infected (>=deltaThreat) nodes will autosiolate
@@ -645,7 +655,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                             List<Edge> edgesToRemove = new ArrayList<Edge>();
                             // mark all incident edges to be removed at random                                
                             for (Edge edge : graph.getEdges(node)) {
-                                if (rand.nextDouble() < pSeeders) {
+                                if (rand.nextDouble() < pSeeders /*reactionE[reaction]*/) {
                                     edgesToRemove.add(edge);
                                 }
                             }
@@ -665,7 +675,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                                 // if neighbour is infected and a threat detach from him wtih p%
                                 if (neighborData.sirState.equals(SIRState.INFECTED) && neighborData.infectionCounter >= deltaThreat) {
                                     // try to detach from infected node
-                                    if (rand.nextDouble() < pSeeders) {
+                                    if (rand.nextDouble() < pSeeders /*reactionE[reaction]*/) {
                                         e1 = graph.getEdge(node, neighbor);
                                         if (e1 != null) {
                                             graph.removeEdge(e1);
@@ -678,8 +688,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                                 }
                             }
                         }
-                    }
+                    }                    
                 }
+                //if(iteration == reactionTimes[reaction])
+                //  reaction++;
             }
 
             // change nodes to infectious
@@ -691,7 +703,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 row.setValue(deltaCol, 0);
                 nodeData.sirState = SIRState.INFECTED;
                 nodeData.infectionCounter = 0;
-
+                
                 if (!infectiousList.contains(node)) {
                     infectiousList.add(node);
                 }
@@ -705,11 +717,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         for (int rec : recCounter) {
             errorReport += rec + "\n";
         }
-
-        pw.println("Infected,Recovered,Died,MaxDegree");
+        
+        pw.println("Infected,Recovered,Died,MaxDegree,Dns");
         for (int i = 0; i < recCounter.size(); ++i) {
             pw.println(1f * infCounter.get(i) / nodes.size() + "," + 1f * recCounter.get(i) / nodes.size() + ","
-                    + 1f * dedCounter.get(i) / nodes.size() + "," + degCounter.get(i));
+                    + 1f * dedCounter.get(i) / nodes.size() + "," + degCounter.get(i) + "," + dnsCounter.get(i));
         }
         _iterations += iteration;
         _coverage += (100.0 * (recoveredList.size() + deadList.size()) / nodes.size());
@@ -724,7 +736,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         final int minSleep = 5, maxSleep = 50; // 5/50
         // tolerance modifications ratio after each interaction	 
         final float epsilon0 = 0.001f, epsilon1 = 0.01f;
-
+        
         final Map<Node, OpinionNodeData> nodeDataMap = new HashMap<Node, OpinionNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
 
@@ -743,7 +755,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 1);
         }
-
+        
         OpinionNodeData nodeData;
         Node[] neighbours;
         Node neighbour;
@@ -763,7 +775,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     if (nodeData.sleep <= 0) {
                         // get list of neighbours
                         neighbours = graph.getNeighbors(node).toArray();
-
+                        
                         if (neighbours.length > 0) {
                             // store average neighborhood opinion / or single neighbour's opinion
                             neighbourOpinion = 0f;
@@ -799,7 +811,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                             else {
                                 nodeData.tolerance = Math.min(nodeData.tolerance + epsilon1 * nodeData.scaling1, 1);
                             }
-
+                            
                             if (nodeData.getNodeState(oldOpinion) == nodeData.getNodeState()) {
                                 nodeData.scaling0++;
                                 nodeData.scaling1 = 1;
@@ -851,14 +863,14 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         // random edges (%) to remove from each node in centralized approach        
         double ratioEdgesToRemove = pSeeders; // 0.85
 
-
+        
         int iteration = -1; // due to initial ++ increment
         Random rand = new Random();
         // reactivation interval for nodes
         final int minSleep = 1, maxSleep = 1; // 5/50
         // tolerance modifications ratio after each interaction	 
         final float epsilon0 = 0.001f, epsilon1 = 0.01f;
-
+        
         final Map<Node, OpinionNodeData> nodeDataMap = new HashMap<Node, OpinionNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
 
@@ -892,7 +904,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 graph.removeEdge(edge);
             }
         }
-
+        
         OpinionNodeData nodeData;
         Node[] neighbours;
         Node neighbour;
@@ -915,7 +927,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     if (nodeData.sleep <= 0) {
                         // get list of neighbours
                         neighbours = graph.getNeighbors(node).toArray();
-
+                        
                         if (neighbours.length > 0) {
                             // store average neighborhood opinion / or single neighbour's opinion
                             neighbourOpinion = 0f;
@@ -958,7 +970,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                             else {
                                 nodeData.tolerance = Math.min(nodeData.tolerance + epsilon1 * nodeData.scaling1, 1);
                             }
-
+                            
                             if (nodeData.getNodeState(oldOpinion) == nodeData.getNodeState()) {
                                 nodeData.scaling0++;
                                 nodeData.scaling1 = 1;
@@ -979,7 +991,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                                     }
                                 }
                                 skin /* = nodeData.opinion; */ /= (1f * neighbours.length);
-
+                                
                                 if (skin > 0.0) {
                                     // remove edges ratio <-- skin%
                                     List<Edge> edgesToRemove = new ArrayList<Edge>();
@@ -999,12 +1011,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                                     edgesToRemove = null;
                                 } // end skin>0
                             }
-
+                            
                         } // node has neighbours
 
                         // reset sleep
                         nodeData.sleep = getRandomSleep(rand, minSleep, maxSleep);
-
+                        
                     }// end node is not sleeping
                     else {
                         nodeData.sleep--; // decrease sleep
@@ -1051,7 +1063,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         //final float epsilon0 = 0.001f, epsilon1 = 0.01f;
         // opinion modifications ratio after each interaction	 
         final float omega0 = 0.155f, omega1 = 0.151f;
-
+        
         final Map<Node, OpinionNodeData> nodeDataMap = new HashMap<Node, OpinionNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
 
@@ -1070,7 +1082,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
             row.setValue(sirCol, 1);
         }
-
+        
         OpinionNodeData nodeData;
         Node[] neighbours;
         Node neighbour;
@@ -1103,7 +1115,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     if (nodeData.sleep <= 0) {
                         // get list of neighbours
                         neighbours = graph.getNeighbors(node).toArray();
-
+                        
                         if (neighbours.length > 0) {
                             // store average neighborhood opinion / or single neighbour's opinion
                             neighbourOpinion = 0f;
@@ -1162,14 +1174,14 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         errorReport = "Stubborn agents count: " + stubbornAgents.size() + "\n";
         errorReport += "Indoctrinated count: " + convinced.get(convinced.size() - 1) + " (" + (100.0 * convinced.get(convinced.size() - 1) / nodes.size()) + " %)\n";
         errorReport += "Ended after " + iteration + " iterations\n";
-
+        
         errorReport += "\nReach evolution:\n\n";
         for (int rec : convinced) {
             pw.println(rec);
             //errorReport += rec + "\n";
         }
     }
-
+    
     private void runToleranceCompete(HierarchicalGraph graph, List<Node> nodes, List<Node> stubbornAgents, AttributeColumn sirCol, AttributeColumn deltaCol) {
         int iteration = -1; // due to initial ++ increment
         Random rand = new Random();
@@ -1177,7 +1189,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         final int minSleep = 5, maxSleep = 50;
         // tolerance modifications ratio after each interaction	 
         final float epsilon0 = 0.001f, epsilon1 = 0.01f;
-
+        
         final Map<Node, OpinionNodeData> nodeDataMap = new HashMap<Node, OpinionNodeData>();
         final boolean COMPLEX_DIFFUSION = false; // one friend vs all friends
 
@@ -1198,7 +1210,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             row.setValue(sirCol, 1);
             _s++;
         }
-
+        
         OpinionNodeData nodeData;
         Node[] neighbours;
         Node neighbour;
@@ -1220,7 +1232,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     if (nodeData.sleep <= 0) {
                         // get list of neighbours
                         neighbours = graph.getNeighbors(node).toArray();
-
+                        
                         if (neighbours.length > 0) {
                             // store average neighborhood opinion / or single neighbour's opinion
                             neighbourOpinion = 0f;
@@ -1256,7 +1268,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                             else {
                                 nodeData.tolerance = Math.min(nodeData.tolerance + epsilon1 * nodeData.scaling1, 1);
                             }
-
+                            
                             if (nodeData.getNodeState(oldOpinion) == nodeData.getNodeState()) {
                                 nodeData.scaling0++;
                                 nodeData.scaling1 = 1;
@@ -1308,7 +1320,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      */
     private void runSIRForEachNode(HierarchicalGraph graph, List<Node> nodes, List<Node> infectiousList, AttributeColumn sirCol, AttributeColumn deltaCol, AttributeColumn kendallCol) {
         AttributeRow row;
-
+        
         for (int currentIndex = 0; currentIndex < nodes.size(); ++currentIndex) {
 
             // set all nodes to susceptible except node 'i' which is infected (single source)
@@ -1316,7 +1328,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 row = (AttributeRow) node.getNodeData().getAttributes();
                 row.setValue(sirCol, SIRState.SUSCEPTIBLE);
             }
-
+            
             Node source = nodes.get(currentIndex);
             row = (AttributeRow) source.getNodeData().getAttributes();
             row.setValue(sirCol, SIRState.INFECTED);
@@ -1329,7 +1341,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             //EndCondition endCondition = EndCondition.ITERATIONS;
             List<Node> changeToInfectious = new ArrayList<Node>();
             List<Node> recoveredList = new ArrayList<Node>();
-
+            
             while (++iteration < 15) {
                 // any node infected longer than delta will become recovered
                 for (Node node : infectiousList.toArray(new Node[]{})) {
@@ -1378,7 +1390,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     row = (AttributeRow) node.getNodeData().getAttributes();
                     row.setValue(sirCol, SIRState.INFECTED);
                     row.setValue(deltaCol, 0);
-
+                    
                     if (!infectiousList.contains(node)) {
                         infectiousList.add(node);
                     }
@@ -1400,12 +1412,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             Node n1 = nodes.get(i);
             for (int j = i + 1; j < nodes.size() - 1; ++j) {
                 Node n2 = nodes.get(j);
-
+                
                 c1 = getCentrality(n1);
                 c2 = getCentrality(n2);
                 k1 = getKendallScore(n1);
                 k2 = getKendallScore(n2);
-
+                
                 if ((c1 > c2 && k1 > k2) || (c1 < c2 && k1 < k2)) {
                     nc++; // concordant
                 }
@@ -1414,11 +1426,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 }
             }
         }
-
+        
         double kendall = (nc - nd) / (0.5 * n * (n - 1));
-
+        
         errorReport = "Kendall's tau: " + kendall + " for " + centralityTag + "\n";
-
+        
     }
 
     // runs the social profit diffsion where each node offers social effort to (self and neighbors) based on his generosity (gamma).
@@ -1427,7 +1439,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     private void runSocialProfitDiffusion(HierarchicalGraph graph, List<Node> nodes, List<Node> stubbornAgents, AttributeColumn sirCol, AttributeColumn deltaCol, PrintWriter pw) {
         // whether to use homogeneous or heterogeneous model
         final boolean HOMOGENEOUS = true;
-
+        
         int iteration = -1; // due to initial ++ increment
         Random rand = new Random();
         // reactivation interval for nodes
@@ -1454,7 +1466,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             AttributeRow row = (AttributeRow) stubbornAgents.get(i).getNodeData().getAttributes();
             row.setValue(sirCol, 1);
         }
-
+        
         SocialBenefitNodeData nodeData;
         Node[] neighbours;
         float finalEffort = 0f, finalBenefit = 0f, avgProfit = 0f, minProfit = Float.MAX_VALUE, maxProfit = 0, finalProfit = 0f;
@@ -1470,7 +1482,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 if (nodeData.sleep >= 0) { // !always!
                     // get list of neighbours
                     neighbours = graph.getNeighbors(node).toArray();
-
+                    
                     if (neighbours.length > 0) {
                         // invest 1-g effort in oneself
                         nodeData.effort += (1 - nodeData.generosity);
@@ -1492,14 +1504,14 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                                 _gen += nodeDataMap.get(neighbour).generosity;
                             }
                             _gen /= neighbours.length;
-
+                            
                             if (_gen > 0.5) {
                                 nodeData.generosity = Math.min(1, nodeData.generosity + epsilon1);
                             } else {
                                 nodeData.generosity = Math.max(0, nodeData.generosity - epsilon0);
                             }
                         }
-
+                        
                     } // node has neighbours
                     else {
                         // force node to invest all effort in oneself                        
@@ -1513,8 +1525,8 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 /*else {
                  nodeData.sleep--; // decrease sleep
                  }*/
-
-
+                
+                
             } // end one simulation iteration
 
             // 2: iterate nodes update profit, state
@@ -1525,7 +1537,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 // store node profit as attribute row
                 AttributeRow row = (AttributeRow) node.getNodeData().getAttributes();
                 row.setValue(deltaCol, nodeData.generosity);
-
+                
                 if (nodeData.isStubborn) {
                     ; // no change in generosity!
                 } else {
@@ -1554,13 +1566,13 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                     avgB += nodeData.benefit;
                     avgP += nodeData.profit;
                 }
-
+                
                 avgE /= nodes.size();
                 avgB /= nodes.size();
                 avgP /= nodes.size();
-
+                
                 pw.println(avgE + "," + avgB + "," + avgP);
-
+                
                 if (maxProfit < avgP) {
                     maxProfit = avgP;
                 }
@@ -1582,7 +1594,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 nodeData.effort = 0;
                 nodeData.benefit = 0;
             }
-
+            
         } // end simulation
 
         errorReport += "Effort [" + String.format("%.3f", finalEffort) + "], Benefit [" + String.format("%.3f", finalBenefit)
@@ -1594,13 +1606,13 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     // <editor-fold defaultstate="collapsed" desc="Misc Area">
     private String errorReport = "";
     private String shortReport = "";
-
+    
     public String getReport() {
         String report = "<HTML> <BODY> <h1>Social Influence Benchmark Report </h1> "
                 + "<hr><br>";
-
+        
         report += errorReport + "</BODY></HTML>";
-
+        
         return report;
     }
 
@@ -1612,7 +1624,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         this.isCanceled = true;
         return true;
     }
-
+    
     private boolean isCanceled() {
         return isCanceled;
     }
@@ -1623,31 +1635,31 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
      */
     public void setProgressTicket(ProgressTicket progressTicket) {
         this.progress = progressTicket;
-
+        
     }
-
+    
     public static enum BenchmarkCentrality {
-
+        
         DEGREE, BETWEENNESS, EIGENVECTOR, CLOSENESS, PAGERANK, HITS, BDPOWER, BDINFLUENCE, HINDEX, CLUSTERRANK, LEADERRANK, LOCALCENTRALITY, KSHELL, COMMUNITYRANK, GENETICRANK
     }
-
+    
     public static enum DiffusionAlgorithm {
-
+        
         SIR, TOLERANCE, SIR_INDIVIDUAL, TOLERANCE_DEPLETE, TOLERANCE_COMPETE, TOLERANCE_EPIDEMIC, SOCIAL_PROFIT, SIR_EDGE_REMOVAL
     }
-
+    
     private enum SIRState {
-
+        
         SUSCEPTIBLE, INFECTED, RECOVERED, DEAD
     }
-
+    
     private enum EndCondition {
-
+        
         KPOPULATION, ITERATIONS, OUTBREAKDIED
     }
-
+    
     private class OpinionNodeData {
-
+        
         int sleep = 0;
         float tolerance = 1f;
         float opinion = 0.5f;
@@ -1656,30 +1668,30 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         int scaling0 = 1;
         // tolerance modification scaling used for tolerance (1)	 
         int scaling1 = 1;
-
+        
         OpinionNodeData(float opinion, float tolerance, int sleep, boolean isStubborn) {
             this.opinion = opinion;
             this.tolerance = tolerance;
             this.sleep = sleep;
             this.isStubborn = isStubborn;
         }
-
+        
         boolean getNodeState() {
             return opinion >= 0.5f;
         }
-
+        
         boolean getNodeState(float otherState) {
             return otherState >= 0.5f;
         }
     }
-
+    
     private class SocialBenefitNodeData {
-
+        
         int sleep = 0; // set to random in constructor
         float generosity = 0.5f; // set to value in constructor   
         float effort, benefit, profit;
         boolean isStubborn = false;
-
+        
         ;
 
         SocialBenefitNodeData(float generosity, int sleep, boolean isStubborn) {
@@ -1688,17 +1700,17 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             this.isStubborn = isStubborn;
         }
     }
-
+    
     private class SIRNodeData {
-
+        
         SIRState sirState;
         int infectionCounter = 0;
-
+        
         SIRNodeData(SIRState sirState) {
             this.sirState = sirState;
         }
     }
-
+    
     private String getCentralityTag(BenchmarkCentrality centrality) {
         switch (centrality) {
             case DEGREE:
@@ -1742,7 +1754,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 return null;
         }
     }
-
+    
     private void sortByCentrality(List<Node> nodes, final String centralityTag) {
         Collections.sort(nodes, new Comparator<Node>() {
             // sort by used centrality
@@ -1767,7 +1779,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
             }
         });
     }
-
+    
     private void sortRandom(List<Node> nodes) {
         final Random rand = new Random();
         Collections.sort(nodes, new Comparator<Node>() {
@@ -1780,15 +1792,23 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     // Get maximum degree from a graph     
     private int getMaximumDegree(HierarchicalGraph graph) {
         int degree = 0, maxDegree = 0;;
-
+        
         for (Node node : graph.getNodes()) {
             degree = graph.getDegree(node);
             if (degree > maxDegree) {
                 maxDegree = degree;
             }
         }
-
+        
         return maxDegree;
+    }
+
+    // Get density of a graph     
+    private double getGraphDensity(HierarchicalGraph graph) {
+        GraphDensity density = new GraphDensity();
+        density.setDirected(false);        
+        density.execute(graph.getGraphModel(), null);
+        return density.getDensity();        
     }
 
     /**
@@ -1830,7 +1850,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         AttributeRow row;
         Map<Integer, List<Node>> colored = new HashMap<Integer, List<Node>>();
         colored.put(color, new ArrayList<Node>());
-
+        
         while (counter < nodes.size()) {
             for (int i = 0; i < nodes.size(); ++i) {
                 Node node = nodes.get(i);
@@ -1886,7 +1906,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         List<Node> infectiousList = new ArrayList<Node>();
         Node candidate;
         int cA = 0, cB = 0;
-
+        
         while (infectiousListA.size() > 0 && infectiousListB.size() > 0) {
             if (infectiousListA.size() > 0) {
                 // move first node from A to infectious list
@@ -1909,10 +1929,10 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 cB++;
             }
         }
-
+        
         return infectiousList;
     }
-
+    
     private void removeNode(List<Node> nodes, Node toRemove) {
         Node _node = null;
         for (Node node : nodes) {
@@ -1921,16 +1941,16 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
                 break;
             }
         }
-
+        
         if (_node != null) {
             nodes.remove(_node);
         }
     }
-
+    
     private int getRandomSleep(Random rand, int min, int max) {
         return rand.nextInt(max - min + 1) + min;
     }
-
+    
     private void runDegree(HierarchicalGraph graph, AttributeModel attributeModel) {
         // degree                
         Degree degree = new Degree();
@@ -1938,7 +1958,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         degree.execute(graph.getGraphModel(), attributeModel);
         degree.getAverageDegree();
     }
-
+    
     private void runBetweenness(HierarchicalGraph graph, AttributeModel attributeModel) {
         // betweenness, closeness, bdpower, bdinfluence
         GraphDistance distance = new GraphDistance();
@@ -1948,7 +1968,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         distance.execute(graph.getGraphModel(), attributeModel);
         distance.getPathLength();
     }
-
+    
     private void runEigenvector(HierarchicalGraph graph, AttributeModel attributeModel) {
         // eigenvector  
         EigenvectorCentrality eigenvector = new EigenvectorCentrality();
@@ -1957,7 +1977,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         eigenvector.execute(graph.getGraphModel(), attributeModel);
         String ev = eigenvector.getReport();
     }
-
+    
     private void runPageRank(HierarchicalGraph graph, AttributeModel attributeModel) {
         // pagerank  
         PageRank pagerank = new PageRank();
@@ -1967,7 +1987,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         pagerank.execute(graph.getGraphModel(), attributeModel);
         String pr = pagerank.getReport();
     }
-
+    
     private void runHits(HierarchicalGraph graph, AttributeModel attributeModel) {
         // hits
         Hits hits = new Hits();
