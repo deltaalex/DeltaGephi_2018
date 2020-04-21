@@ -77,12 +77,12 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Ratio of initial seeders
      */
-    private double pSeeders = 0.5; // .0001, .0003, .001, .003, .01    
+    private double pSeeders = 0.002; // .0001, .0003, .001, .003, .01    
     /**
      * Absolute number of initial seeders; used instead of pSeeders only if
      * value is >0
      */
-    private double nSeeders = 1;
+    private double nSeeders = 10; //10;
     /**
      * Activity period for tolerance deplete model
      */
@@ -106,7 +106,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /*
      * Number of iterations until infected node becomes recovered
      */
-    private double deltaRecover = 26; // 10! // covid=12+14=26 // DOI: 10.7326/M20-0504
+    private double deltaRecover = 26; // 2-Genosos // covid=12+14=26 // DOI: 10.7326/M20-0504
     /**
      * Probability to become infected after contacting an infected node during
      * the period [deltaIncubation, deltaRecover]
@@ -115,11 +115,11 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     /**
      * Probability to die instead of recovery
      */
-    private double lambdaDie = 0.0; // 0.02!
+    private double lambdaDie = 0.02; // 0.02!
     /**
      * Probability to become susceptible again after infection period has ended
      */
-    private double lambdaSusceptible = 0.0; // 0.1!        
+    private double lambdaSusceptible = 0.01; // 0.0-0.01-0.1!        
 
     // <editor-fold defaultstate="collapsed" desc="Getters/Setters">   
     public void setCentrality(BenchmarkCentrality centrality) {
@@ -277,7 +277,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
         //      
 
         sortRandom(nodes);
-        //sortByCentrality(nodes, centralityTag);
+//        sortByCentrality(nodes, centralityTag);
 
         //
         // 3) infect top pSeeders% nodes
@@ -856,7 +856,7 @@ public class SocialInfluenceBenchmark implements Statistics, LongTask {
     }
 
     // runs the classic tolerance model with either single (one random neighbour) or complex (average all neighbours) diffusion
-    // in the epidemic mode: opinion->infectiousness; 
+    // in the epidemic mode: opinion->infectiousness; // covid19 alternative
     private void runToleranceEpidemic(HierarchicalGraph graph, List<Node> nodes, List<Node> stubbornAgents, AttributeColumn sirCol, AttributeColumn deltaCol) {
         // whether to use centralized or decentralized edge removal approaches
         final boolean CENTRALIZED = false, DECENTRALIZED = true;
