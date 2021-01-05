@@ -60,7 +60,7 @@ public class GraphColorizer {
     public interface Constants {
 
         final String COLOR_COL_DEFAULT_VALUE = "-1";
-        final String COLOR_COLUMN = "colourList";
+        final String COLOR_COLUMN = "GirvanNewList";
     }
 
     public final class Color {
