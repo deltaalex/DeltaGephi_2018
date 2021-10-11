@@ -26,6 +26,7 @@ import org.openide.util.Lookup;
 public class EdgeBetweenness implements Statistics, LongTask {
 
     public static final String EDGE_BETWEENNESS = "edgebetweenness";
+    public static final String EDGE_B_per_D = "edgebtw/deg";
     private double[] edgeBetweenness;
     private double edgeBetwNum;
     private boolean isCancelled;
@@ -79,12 +80,16 @@ public class EdgeBetweenness implements Statistics, LongTask {
         // Get column for EDGE_BETWEENNESS (create if needed)
         AttributeTable edgeTable = am.getEdgeTable();
         AttributeColumn edgeBetweennessCol = edgeTable.getColumn(EDGE_BETWEENNESS);
+        AttributeColumn edgeBperDCol = edgeTable.getColumn(EDGE_B_per_D);
 
         if (edgeBetweennessCol != null) {
             edgeTable.removeColumn(edgeBetweennessCol);
         }
+        if (edgeBperDCol != null) {
+            edgeTable.removeColumn(edgeBperDCol);
+        }
         edgeBetweennessCol = edgeTable.addColumn(EDGE_BETWEENNESS, "EdgeBetweenness", AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0));
-
+        edgeBperDCol = edgeTable.addColumn(EDGE_B_per_D, "EdgeBtw/Deg", AttributeType.DOUBLE, AttributeOrigin.COMPUTED, new Double(0));
 
         // Allocate new array for betweenness of each edge
         // Inicialize to 1
@@ -218,7 +223,17 @@ public class EdgeBetweenness implements Statistics, LongTask {
             if (isNormalized) {
                 val /= maxBetweenness;
             }
+
+            // final writing of edge btw to graph (normalized, /2)                        
             row.setValue(edgeBetweennessCol, val);
+
+            // add here edge_btw / avg(nodes.deg)                        
+            int sourceDeg = hGraph.getDegree(e.getSource());
+            int targetDeg = hGraph.getDegree(e.getTarget());
+            float avgDeg = (sourceDeg + targetDeg) / 2f;
+            // btw/deg
+            val = val / avgDeg;
+            row.setValue(edgeBperDCol, val);
         }
 
         // sum of edge betweenness
