@@ -154,6 +154,7 @@
             <public-packages>
                 <package>org.gephi.io.generator.plugin</package>
                 <package>org.gephi.io.generator.plugin.genetic</package>
+                <package>org.gephi.io.generator.plugin.organicscale</package>
             </public-packages>
         </data>
     </configuration>
